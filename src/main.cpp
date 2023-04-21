@@ -8,7 +8,7 @@ static int SDL_SetRenderDrawColorEx(SDL_Renderer* renderer, SDL_Color color) {
 
 static SDL_FRect fitInside(SDL_Rect const& src, SDL_Rect const& dst);
 
-static std::optional<std::filesystem::path> pickImage() {
+static std::filesystem::path pickImage() {
     auto const result = pfd::open_file{
         "Pick an image file to view",
         pfd::path::home(),
@@ -22,26 +22,23 @@ static std::optional<std::filesystem::path> pickImage() {
 }
 
 static bool switchImage(
-    std::filesystem::path const& image_filepath,
     std::unique_ptr<SDL_Window, SDLit::SDL_Deleter> const& window,
     std::unique_ptr<SDL_Renderer, SDLit::SDL_Deleter> const& renderer,
-    std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter>& image_texture) {
+    std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter>& image_texture,
+    std::filesystem::path const& image_filepath) {
 
     image_texture = SDLit::make_unique(IMG_LoadTexture, renderer.get(), image_filepath.c_str());
     if (not image_texture) {
-        std::cerr <<  SDL_GetError() << '\n';
         return false;
     }
 
     SDL_Rect image_rect{};
     if (SDL_QueryTexture(image_texture.get(), nullptr, nullptr, &image_rect.w, &image_rect.h)) {
-        std::cerr <<  SDL_GetError() << '\n';
         return false;
     }
 
     SDL_Rect desktop_rect{};
     if (SDL_GetDisplayUsableBounds(SDL_GetWindowDisplayIndex(window.get()), &desktop_rect)) {
-        std::cerr <<  SDL_GetError() << '\n';
         return false;
     }
 
@@ -68,45 +65,31 @@ static bool switchImage(
 }
 
 int main(int argc, char** argv) {
-
-    SDLit::init(SDL_INIT_VIDEO, IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_WEBP);
-
-    SDL_assert_always(1 == SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1"));
-    SDL_assert_always(1 == SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best"));
-    SDL_assert_always(1 == SDL_SetHint(SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1"));
-
-    if (!pfd::settings::available())
-    {
-        std::cout << "Portable File Dialogs are not available on this platform.\n";
-        return 1;
+    if (argc > 2) {
+        std::cerr << "Usage: " << argv[0] << " [IMAGE]\n";
+        return EXIT_FAILURE;
     }
-    pfd::settings::verbose(true);
+
+    RET_FAIL_IF_FALSE(preamble());
 
     auto const window = SDLit::make_unique(
         SDL_CreateWindow,
         "Image Viewer V2",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         640, 480,
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    EXIT_IF_NULL(window);
+    RET_FAIL_IF_NULL(window);
 
     auto const renderer = SDLit::make_unique(
         SDL_CreateRenderer, window.get(), -1,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    EXIT_IF_NULL(renderer);
+    RET_FAIL_IF_NULL(renderer);
 
-    std::optional<std::filesystem::path> image_filepath_opt = pickImage();
-    if (not image_filepath_opt.has_value()) {
-        std::cerr << "No image to display, exiting.\n";
-        return EXIT_FAILURE;
-    }
+    std::filesystem::path image_filepath = (argc == 2) ? argv[1] : pickImage();
+    RET_FAIL_IF_EMPTY(image_filepath);
 
     std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter> image_texture{nullptr};
-    if (not switchImage(image_filepath_opt.value(), window, renderer, image_texture)) {
-        std::cerr << "Failed to open image\n";
-        return EXIT_FAILURE;
-    }
+    RET_FAIL_IF_FALSE(switchImage(window, renderer, image_texture, image_filepath));
 
     std::function<void()> repaint = [&]() {
         SDL_Rect window_rect{};
@@ -152,14 +135,9 @@ int main(int argc, char** argv) {
                 switch (event.button.button) {
                 case SDL_BUTTON_LEFT:
                 case SDL_BUTTON_RIGHT:
-                    image_filepath_opt = pickImage();
-                    if (not image_filepath_opt.has_value()) {
-                        std::cerr << "No image to display, exiting.\n";
-                        return EXIT_FAILURE;
-                    }
-                    if (not switchImage(image_filepath_opt.value(), window, renderer, image_texture)) {
-                        std::cerr << "Failed to open image\n";
-                        return EXIT_FAILURE;
+                    image_filepath = pickImage();
+                    if (not image_filepath.empty()) {
+                        RET_FAIL_IF_FALSE(switchImage(window, renderer, image_texture, image_filepath));
                     }
                     break;
                 default:
@@ -211,3 +189,28 @@ SDL_FRect fitInside(SDL_Rect const& src, SDL_Rect const& dst) {
     return result;
 }
 
+bool preamble() noexcept {
+    if (not pfd::settings::available())
+    {
+        SDL_SetError("this platform has no portable-file-dialogs backend.");
+        return false;
+    }
+
+    SDLit::init(SDL_INIT_VIDEO, IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_WEBP);
+
+    std::vector<std::pair<std::string, std::string>> const hints{
+        {SDL_HINT_IME_SHOW_UI, "1"},
+        {SDL_HINT_RENDER_SCALE_QUALITY, "best"},
+        {SDL_HINT_RENDER_VSYNC, "1"},
+        {SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1"}
+    };
+
+    for (auto const& hint : hints) {
+        if (not SDL_SetHint(hint.first.c_str(), hint.second.c_str())) {
+            SDL_SetError("failed to set hint %s=%s: %s", hint.first.c_str(), hint.second.c_str(), std::string{SDL_GetError()}.c_str());
+            return false;
+        }
+    }
+
+    return true;
+}

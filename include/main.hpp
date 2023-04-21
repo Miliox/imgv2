@@ -12,9 +12,27 @@
 #include "SDLit.hpp"
 #include "portable-file-dialogs.h"
 
-#define EXIT_IF_NULL(ptr) \
+#define RET_FAIL_IF_TRUE(result) \
+    if (result) { \
+        std::cerr << #result << " failed: " << SDL_GetError() << '\n'; \
+        return EXIT_FAILURE; \
+    }
+
+#define RET_FAIL_IF_FALSE(result) \
+    if (not result) { \
+        std::cerr << #result << " failed: " << SDL_GetError() << '\n'; \
+        return EXIT_FAILURE; \
+    }
+
+#define RET_FAIL_IF_NULL(ptr) \
     if (ptr == nullptr) { \
-        std::cerr << #ptr << " is nullptr: " << SDL_GetError() << '\n'; \
+        std::cerr << #ptr << " is null: " << SDL_GetError() << '\n'; \
+        return EXIT_FAILURE; \
+    }
+
+#define RET_FAIL_IF_EMPTY(storage) \
+    if (storage.empty()) { \
+        std::cerr << #storage << " is empty: " << SDL_GetError() << '\n'; \
         return EXIT_FAILURE; \
     }
 
@@ -28,3 +46,5 @@
     if (result != 0) { \
         std::cerr << #result << " failed: " << SDL_GetError() << '\n'; \
     }
+
+bool preamble() noexcept;
