@@ -1,0 +1,5 @@
+[wrap-git]
+directory = sdlit
+url = https://github.com/Miliox/SDLit.git
+revision = head
+depth = 1
