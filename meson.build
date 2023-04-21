@@ -13,3 +13,5 @@ project(
 sdlit_sub = subproject('sdlit')
 sdlit_dep = sdlit_sub.get_variable('sdlit_dep')
 sdlit_lib = sdlit_sub.get_variable('sdlit_lib')
+
+pfd_dep = subproject('pfd').get_variable('pfd_dep')

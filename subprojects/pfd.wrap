@@ -1,0 +1,6 @@
+[wrap-git]
+directory = pfd
+url = https://github.com/samhocevar/portable-file-dialogs.git
+revision = head
+depth = 1
+patch_directory = pfd
