@@ -15,3 +15,5 @@ sdlit_dep = sdlit_sub.get_variable('sdlit_dep')
 sdlit_lib = sdlit_sub.get_variable('sdlit_lib')
 
 pfd_dep = subproject('pfd').get_variable('pfd_dep')
+
+executable('imgv2', ['src/main.cpp'], win_subsystem: 'windows', dependencies: [sdlit_dep, pfd_dep], link_with: [sdlit_lib])
