@@ -1,5 +1,5 @@
 #include "main.hpp"
-#include "nswindow_util.h"
+#include "native_window.h"
 
 static int eventMonitor(void *userdata, SDL_Event *event);
 
@@ -110,23 +110,16 @@ const char* stringify(SDL_WindowEventID const id) {
 }
 
 void updateWindowDecoration(SDL_Window* window) {
-    SDL_SysWMinfo wm_info{};
-    if (SDL_GetWindowWMInfo(window, &wm_info)) {
-#ifdef __MACH__
-        NSWindow* cocoa_window = wm_info.info.cocoa.window;
-        NSWindowUtil_transparentTitle(cocoa_window);
-#endif
-    }
+    SDL_SysWMinfo info{};
+    SDL_GetWindowWMInfo(window, &info);
+    NativeWindow_showFullScreenButton(&info, false);
+    NativeWindow_transparentTitleBar(&info);
 }
 
-void performZoom(SDL_Window* window) {
-    SDL_SysWMinfo wm_info{};
-    if (SDL_GetWindowWMInfo(window, &wm_info)) {
-#ifdef __MACH__
-        NSWindow* cocoa_window = wm_info.info.cocoa.window;
-        NSWindowUtil_performZoom(cocoa_window);
-#endif
-    }
+void maximizeWindow(SDL_Window* window) {
+    SDL_SysWMinfo info{};
+    SDL_GetWindowWMInfo(window, &info);
+    NativeWindow_maximize(&info);
 }
 
 int main(int argc, char** argv) {
@@ -189,9 +182,7 @@ int main(int argc, char** argv) {
             case SDL_WINDOWEVENT:
                 SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "window evt: %s", stringify(static_cast<SDL_WindowEventID>(event.window.event)));
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
-                    if (!fullscreen) {
-                        updateWindowDecoration(window.get());
-                    }
+                    updateWindowDecoration(window.get());
                     repaint();
                 }
             case SDL_KEYDOWN:
@@ -210,7 +201,7 @@ int main(int argc, char** argv) {
                     if (event.button.clicks == 2U) {
                         // fullscreen = !fullscreen;
                         // SDL_SetWindowFullscreen(window.get(), fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-                        performZoom(window.get());
+                        maximizeWindow(window.get());
                     }
                     break;
                 default:

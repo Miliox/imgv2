@@ -17,16 +17,19 @@ sdlit_lib = sdlit_sub.get_variable('sdlit_lib')
 pfd_dep = subproject('pfd').get_variable('pfd_dep')
 
 add_languages('objc')
-nswindow_util_lib = static_library('nswindow_util', ['src/nswindow_util.m'], link_args: ['-framework', 'Foundation'])
-nswindow_util_dep = declare_dependency(
-  include_directories: include_directories('include'),
+native_window_ext_dep = dependency('sdl2')
+native_window_inc = include_directories('include')
+native_window_lib = static_library('native_window', ['src/native_window_osx.m'], include_directories: native_window_inc, dependencies: native_window_ext_dep)
+native_window_dep = declare_dependency(
+  include_directories: native_window_inc,
+  dependencies: native_window_ext_dep,
   link_args: ['-framework', 'Foundation'],
-  link_with: nswindow_util_lib,
+  link_with: native_window_lib,
 )
 
 imgv2_dep = declare_dependency(
   include_directories: include_directories('include'),
-  dependencies: [sdlit_dep, pfd_dep, nswindow_util_dep],
+  dependencies: [sdlit_dep, pfd_dep, native_window_dep],
   link_with: [sdlit_lib],
 )
 imgv2_exe = executable('imgv2', ['src/main.cpp'], win_subsystem: 'windows', dependencies: imgv2_dep)
