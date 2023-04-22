@@ -65,6 +65,70 @@ static bool switchImage(
     return true;
 }
 
+const char* stringify(SDL_WindowEventID const id) {
+    switch (id) {
+    case SDL_WINDOWEVENT_NONE:
+        return "SDL_WINDOWEVENT_NONE";
+    case SDL_WINDOWEVENT_SHOWN:
+        return "SDL_WINDOWEVENT_SHOWN";
+    case SDL_WINDOWEVENT_HIDDEN:
+        return "SDL_WINDOWEVENT_HIDDEN";
+    case SDL_WINDOWEVENT_EXPOSED:
+        return "SDL_WINDOWEVENT_EXPOSED";
+    case SDL_WINDOWEVENT_MOVED:
+        return "SDL_WINDOWEVENT_MOVED";
+    case SDL_WINDOWEVENT_RESIZED:
+        return "SDL_WINDOWEVENT_RESIZED";
+    case SDL_WINDOWEVENT_SIZE_CHANGED:
+        return "SDL_WINDOWEVENT_SIZE_CHANGED";
+    case SDL_WINDOWEVENT_MINIMIZED:
+        return "SDL_WINDOWEVENT_MINIMIZED";
+    case SDL_WINDOWEVENT_MAXIMIZED:
+        return "SDL_WINDOWEVENT_MAXIMIZED";
+    case SDL_WINDOWEVENT_RESTORED:
+        return "SDL_WINDOWEVENT_RESTORED";
+    case SDL_WINDOWEVENT_ENTER:
+        return "SDL_WINDOWEVENT_ENTER";
+    case SDL_WINDOWEVENT_LEAVE:
+        return "SDL_WINDOWEVENT_LEAVE";
+    case SDL_WINDOWEVENT_FOCUS_GAINED:
+        return "SDL_WINDOWEVENT_FOCUS_GAINED";
+    case SDL_WINDOWEVENT_FOCUS_LOST:
+        return "SDL_WINDOWEVENT_FOCUS_LOST";
+    case SDL_WINDOWEVENT_CLOSE:
+        return "SDL_WINDOWEVENT_CLOSE";
+    case SDL_WINDOWEVENT_TAKE_FOCUS:
+        return "SDL_WINDOWEVENT_TAKE_FOCUS";
+    case SDL_WINDOWEVENT_HIT_TEST:
+        return "SDL_WINDOWEVENT_HIT_TEST";
+    case SDL_WINDOWEVENT_ICCPROF_CHANGED:
+        return "SDL_WINDOWEVENT_ICCPROF_CHANGED";
+    case SDL_WINDOWEVENT_DISPLAY_CHANGED:
+        return "SDL_WINDOWEVENT_DISPLAY_CHANGED";
+    }
+    return "???";
+}
+
+void updateWindowDecoration(SDL_Window* window) {
+    SDL_SysWMinfo wm_info{};
+    if (SDL_GetWindowWMInfo(window, &wm_info)) {
+#ifdef __MACH__
+        NSWindow* cocoa_window = wm_info.info.cocoa.window;
+        NSWindowUtil_transparentTitle(cocoa_window);
+#endif
+    }
+}
+
+void performZoom(SDL_Window* window) {
+    SDL_SysWMinfo wm_info{};
+    if (SDL_GetWindowWMInfo(window, &wm_info)) {
+#ifdef __MACH__
+        NSWindow* cocoa_window = wm_info.info.cocoa.window;
+        NSWindowUtil_performZoom(cocoa_window);
+#endif
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc > 2) {
         std::cerr << "Usage: " << argv[0] << " [IMAGE]\n";
@@ -81,13 +145,7 @@ int main(int argc, char** argv) {
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     RET_FAIL_IF_NULL(window);
 
-    SDL_SysWMinfo wm_info{};
-    if (SDL_GetWindowWMInfo(window.get(), &wm_info)) {
-#ifdef __MACH__
-        NSWindow* cocoa_window = wm_info.info.cocoa.window;
-        NSWindowUtil_transparentTitle(cocoa_window);
-#endif
-    }
+    updateWindowDecoration(window.get());
 
     auto const renderer = SDLit::make_unique(
         SDL_CreateRenderer, window.get(), -1,
@@ -119,6 +177,7 @@ int main(int argc, char** argv) {
     // at the end of resizing operation. This allows the image to be responsive during the resizing.
     SDL_AddEventWatch(eventMonitor, &repaint);
 
+    bool fullscreen{false};
     bool running{true};
     SDL_Event event{};
     do {
@@ -128,7 +187,11 @@ int main(int argc, char** argv) {
                 running = false;
                 break;
             case SDL_WINDOWEVENT:
+                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "window evt: %s", stringify(static_cast<SDL_WindowEventID>(event.window.event)));
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
+                    if (!fullscreen) {
+                        updateWindowDecoration(window.get());
+                    }
                     repaint();
                 }
             case SDL_KEYDOWN:
@@ -144,15 +207,15 @@ int main(int argc, char** argv) {
                 switch (event.button.button) {
                 case SDL_BUTTON_LEFT:
                 case SDL_BUTTON_RIGHT:
-                    image_filepath = pickImage();
-                    if (not image_filepath.empty()) {
-                        RET_FAIL_IF_FALSE(switchImage(window, renderer, image_texture, image_filepath));
+                    if (event.button.clicks == 2U) {
+                        // fullscreen = !fullscreen;
+                        // SDL_SetWindowFullscreen(window.get(), fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+                        performZoom(window.get());
                     }
                     break;
                 default:
                     break;
                 }
-                break;
                 break;
             default:
                 break;
@@ -168,6 +231,10 @@ int main(int argc, char** argv) {
 
 int eventMonitor(void* repaint_callback, SDL_Event* event) {
     // Refresh while resizing window
+    if (event->type == SDL_WINDOWEVENT) {
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "cb window evt: %s", stringify(static_cast<SDL_WindowEventID>(event->window.event)));
+    }
+
     if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
         if (repaint_callback != nullptr) {
             static_cast<std::function<void()>*>(repaint_callback)->operator()();
