@@ -23,7 +23,7 @@ native_window_lib = static_library('native_window', ['src/native_window_osx.m'],
 native_window_dep = declare_dependency(
   include_directories: native_window_inc,
   dependencies: native_window_ext_dep,
-  link_args: ['-framework', 'Foundation'],
+  link_args: ['-framework', 'Foundation', '-framework', 'Cocoa'],
   link_with: native_window_lib,
 )
 

@@ -20,6 +20,8 @@ static void updateWindowDecoration(SDL_Window* window);
 
 static void maximizeWindow(SDL_Window* window);
 
+static void populateMenu(SDL_Window* window, std::uint32_t open_file_event_id);
+
 int main(int argc, char** argv) {
     if (argc > 2) {
         std::cerr << "Usage: " << argv[0] << " [IMAGE]\n";
@@ -36,7 +38,13 @@ int main(int argc, char** argv) {
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     RET_FAIL_IF_NULL(window);
 
-    updateWindowDecoration(window.get());
+    std::uint32_t const open_file_event_id{SDL_RegisterEvents(1)};
+    if (open_file_event_id == 0xFFFFFFFF) {
+        std::cerr << "There is no space for user events in sdl";
+        return EXIT_FAILURE;
+    }
+
+    populateMenu(window.get(), open_file_event_id);
 
     auto const renderer = SDLit::make_unique(
         SDL_CreateRenderer, window.get(), -1,
@@ -81,6 +89,9 @@ int main(int argc, char** argv) {
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
                     repaint();
                 }
+                if (event.window.event == SDL_WINDOWEVENT_MOVED) {
+                    updateWindowDecoration(window.get());
+                }
             case SDL_KEYDOWN:
                 switch (event.key.keysym.sym) {
                 case SDLK_ESCAPE:
@@ -103,6 +114,13 @@ int main(int argc, char** argv) {
                 }
                 break;
             default:
+                if (event.type == open_file_event_id) {
+                    image_filepath =  pickImageDialog();
+                    if (not image_filepath.empty()) {
+                        RET_FAIL_IF_FALSE(switchImage(window, renderer, image_texture, image_filepath));
+                        repaint();
+                    }
+                }
                 break;
             }
         }
@@ -239,6 +257,12 @@ const char* stringify(SDL_WindowEventID const id) {
         return "SDL_WINDOWEVENT_DISPLAY_CHANGED";
     }
     return "???";
+}
+
+void populateMenu(SDL_Window* window, std::uint32_t open_file_event_id) {
+    SDL_SysWMinfo info{};
+    SDL_GetWindowWMInfo(window, &info);
+    NativeWindow_populateMenu(&info, open_file_event_id);
 }
 
 void updateWindowDecoration(SDL_Window* window) {

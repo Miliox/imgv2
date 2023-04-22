@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,6 +17,8 @@ void NativeWindow_showFullScreenButton(struct SDL_SysWMinfo* window_info, bool v
 
 /// Set title bar transparent
 void NativeWindow_transparentTitleBar(struct SDL_SysWMinfo* window_info);
+
+void NativeWindow_populateMenu(struct SDL_SysWMinfo* window_info, uint32_t file_open_clicked_event_id);
 
 #ifdef __cplusplus
 }
