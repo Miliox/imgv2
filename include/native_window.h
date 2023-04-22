@@ -17,11 +17,17 @@ struct SDL_SysWMinfo;
 /// @note: call it again when leaving fullscreen
 void NativeWindow_customizeTitleBar(struct SDL_SysWMinfo* window_info);
 
+/// Customize application menu bar
+/// - Add 'File > Open File'
+/// - Emit user event to be handle in sdl event loop
+/// @note: call only once
+void NativeWindow_customizeApplicationMenu(uint32_t const menu_user_event_id);
+
 /// Customize window menu bar
 /// - Add 'File > Open File'
 /// - Emit user event to be handle in sdl event loop
 /// @note: call only once
-void NativeWindow_customizeMenu(struct SDL_SysWMinfo* window_info, uint32_t const menu_user_event_id);
+void NativeWindow_customizeWindowMenu(struct SDL_SysWMinfo* window_info, uint32_t const menu_user_event_id);
 
 /// Maximize window
 /// @note call it again to undo the operation
