@@ -59,7 +59,7 @@ static bool preamble() noexcept {
 
 int main(int argc, char** argv) {
     if (argc > 2) {
-        std::cerr << "Usage: " << argv[0] << " [IMAGE]\n";
+        std::cerr << "Usage: " << argv[0] << " [IMAGE1] ...\n";
         return EXIT_FAILURE;
     }
     RET_FAIL_IF_FALSE(preamble());
@@ -72,9 +72,18 @@ int main(int argc, char** argv) {
     NativeWindow_customizeApplicationMenu(menu_user_event_id);
 
     ImageViewerMap image_viewer_map{};
+    {
+        std::vector<std::filesystem::path> image_paths{};
+        for (int i = 1; i < argc; ++i) {
+            image_paths.emplace_back(argv[i]);
+        }
+        if (image_paths.empty()) {
+            image_paths = pickImageDialog();
+        }
 
-    openImages(image_viewer_map,(argc == 2) ? std::vector<std::filesystem::path>{argv[1]} : pickImageDialog());
-    RET_FAIL_IF_EMPTY(image_viewer_map);
+        openImages(image_viewer_map, image_paths);
+        RET_FAIL_IF_EMPTY(image_viewer_map);
+    }
 
     // Repaint inside the eventMonitor because SDL_PollEvent only emits SDL_WINDOWEVENT_SIZE_CHANGED
     // at the end of resizing operation. This allows the image to be responsive during the resizing.
