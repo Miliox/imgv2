@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <memory>
+#include <vector>
 
 #include "SDL.h"
 #include "SDL_syswm.h"
@@ -8,7 +9,7 @@
 #include "SDLit.hpp"
 
 /// Pick an image to view using a dialog, returns the path to it if successful otherwise empty
-std::filesystem::path pickImageDialog();
+std::vector<std::filesystem::path> pickImageDialog();
 
 /// Recalculate the rect to fit src inside dst
 SDL_FRect resizeToFit(SDL_Rect const& src, SDL_Rect const& dst);

@@ -6,8 +6,8 @@
 
 #include "portable-file-dialogs.h"
 
-std::filesystem::path pickImageDialog() {
-    auto const images = pfd::open_file{"Select an image to view", pfd::path::home(),
+std::vector<std::filesystem::path> pickImageDialog() {
+    auto const user_selection = pfd::open_file{"Select an image to view", pfd::path::home(),
         {"All files", "*",
          "All images", "*.avif *.bmp *.gif *.iff *.ilbm *.lbm *.jpg, *.jpeg, *.jpe, *.jif, *.jfif *.jxl *.xv *.cur *.ico *.pcx *.pcc, *.dcx *.pnm *.png *.svg *.tif *.tiff *.qoi *.tga *.xpm, *.pm *.xcf *.webp",
          "AV1 Image Format", "*.avif",
@@ -26,14 +26,16 @@ std::filesystem::path pickImageDialog() {
          "Truevision Graphics Adapter File Format", "*.tga",
          "X-Pixmap Format", "*.xpm, *.pm",
          "eXperimental Computing Facility Format", "*.xcf",
-         "WebP image format", "*.webp"}
+         "WebP image format", "*.webp"},
+         pfd::opt::multiselect
     }.result();
 
-    if (images.empty()) {
-        return {};
+    std::vector<std::filesystem::path> file_paths{};
+    for (auto const& file_path : user_selection) {
+        file_paths.emplace_back(file_path);
     }
 
-    return std::filesystem::path{images.front()};
+    return file_paths;
 }
 
 SDL_FRect resizeToFit(SDL_Rect const& src, SDL_Rect const& dst) {
@@ -67,8 +69,8 @@ std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image
     auto image_window = SDLit::make_unique(
         SDL_CreateWindow,
         image_path.filename().c_str(),
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
         image_surface->w,
         image_surface->h,
         SDL_WINDOW_RESIZABLE |
@@ -141,7 +143,7 @@ SDL_Renderer* ImageViewer::renderer() const noexcept { return m_renderer.get(); 
 SDL_Texture* ImageViewer::texture() const noexcept { return m_texture.get(); }
 
 bool ImageViewer::center() noexcept {
-    SDL_SetWindowPosition(m_window.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    SDL_SetWindowPosition(m_window.get(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED);
     return true;
 }
 

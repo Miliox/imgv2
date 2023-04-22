@@ -53,8 +53,8 @@ int main(int argc, char** argv) {
     }
     RET_FAIL_IF_FALSE(preamble());
 
-    std::filesystem::path image_filepath = (argc == 2) ? argv[1] : pickImageDialog();
-    RET_FAIL_IF_EMPTY(image_filepath);
+    std::vector<std::filesystem::path> image_filepaths = (argc == 2) ? std::vector<std::filesystem::path>{argv[1]} : pickImageDialog();
+    // RET_FAIL_IF_EMPTY(image_filepath);
 
     std::uint32_t const menu_user_event_id{SDL_RegisterEvents(1)};
     if (menu_user_event_id == 0xFFFFFFFF) {
@@ -65,11 +65,15 @@ int main(int argc, char** argv) {
 
     ImageViewerMap image_viewer_map{};
 
-    {
-        auto image_viewer = ImageViewer::open(image_filepath);
-        RET_FAIL_IF_NULL(image_viewer);
-        image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
+    for (auto const& image_path  : image_filepaths) {
+        auto image_viewer = ImageViewer::open(image_path);
+        if (image_viewer) {
+            image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
+        } else {
+            std::cerr << "Failed to open '" << image_path << "': " << SDL_GetError() << '\n';
+        }
     }
+    RET_FAIL_IF_EMPTY(image_viewer_map);
 
     // Repaint inside the eventMonitor because SDL_PollEvent only emits SDL_WINDOWEVENT_SIZE_CHANGED
     // at the end of resizing operation. This allows the image to be responsive during the resizing.
@@ -135,10 +139,15 @@ int main(int argc, char** argv) {
                 break;
             default:
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
-                    image_filepath = pickImageDialog();
-                    if (not image_filepath.empty()) {
-                         auto image_viewer = ImageViewer::open(image_filepath);
-                        image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
+                    for (auto const& image_path  : pickImageDialog()) {
+                        if (not image_path.empty()) {
+                            auto image_viewer = ImageViewer::open(image_path);
+                            if (image_viewer) {
+                                image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
+                            } else {
+                                std::cerr << "Failed to open '" << image_path << "': " << SDL_GetError() << '\n';
+                            }
+                        }
                     }
                 }
                 break;
