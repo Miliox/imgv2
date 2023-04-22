@@ -2,11 +2,19 @@
 #include "image_viewer.hpp"
 #include "native_window.h"
 
+#include <unordered_map>
+
+using ImageViewerMap = std::unordered_map<std::uint32_t, std::unique_ptr<ImageViewer>>;
+
 static int eventMonitor(void* repaint_callback, SDL_Event* event) {
     // Refresh while resizing window
     if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
         if (repaint_callback != nullptr) {
-            static_cast<std::unique_ptr<ImageViewer>*>(repaint_callback)->get()->repaint();
+            ImageViewerMap* image_viewer_map = static_cast<ImageViewerMap*>(repaint_callback);
+            auto it = image_viewer_map->find(event->window.windowID);
+            if (it != image_viewer_map->end()) {
+                it->second->repaint();
+            }
         }
     }
     return 1;
@@ -55,12 +63,17 @@ int main(int argc, char** argv) {
     }
     NativeWindow_customizeApplicationMenu(menu_user_event_id);
 
-    auto image_viewer = ImageViewer::open(image_filepath);
-    RET_FAIL_IF_NULL(image_viewer);
+    ImageViewerMap image_viewer_map{};
+
+    {
+        auto image_viewer = ImageViewer::open(image_filepath);
+        RET_FAIL_IF_NULL(image_viewer);
+        image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
+    }
 
     // Repaint inside the eventMonitor because SDL_PollEvent only emits SDL_WINDOWEVENT_SIZE_CHANGED
     // at the end of resizing operation. This allows the image to be responsive during the resizing.
-    SDL_AddEventWatch(eventMonitor, &image_viewer);
+    SDL_AddEventWatch(eventMonitor, &image_viewer_map);
 
     bool running{true};
     SDL_Event event{};
@@ -68,20 +81,39 @@ int main(int argc, char** argv) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
             case SDL_QUIT:
-                running = false;
+                running &= false;
                 break;
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
-                    image_viewer->repaint();
+                    auto it = image_viewer_map.find(event.window.windowID);
+                    if (it != image_viewer_map.end()) {
+                        it->second->repaint();
+                    }
                 }
                 if (event.window.event == SDL_WINDOWEVENT_MOVED) {
-                    image_viewer->customizeTitlebar();
+                    auto it = image_viewer_map.find(event.window.windowID);
+                    if (it != image_viewer_map.end()) {
+                        it->second->customizeTitlebar();
+                    }
+                }
+                if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                    auto it = image_viewer_map.find(event.window.windowID);
+                    if (it != image_viewer_map.end()) {
+                        image_viewer_map.erase(it);
+                    }
+                    running &= !image_viewer_map.empty();
                 }
             case SDL_KEYDOWN:
                 switch (event.key.keysym.sym) {
                 case SDLK_ESCAPE:
-                    running = false;
+                {
+                    auto it = image_viewer_map.find(event.key.windowID);
+                    if (it != image_viewer_map.end()) {
+                        image_viewer_map.erase(it);
+                    }
+                    running &= !image_viewer_map.empty();
                     break;
+                }
                 default:
                     break;
                 }
@@ -91,7 +123,10 @@ int main(int argc, char** argv) {
                 case SDL_BUTTON_LEFT:
                 case SDL_BUTTON_RIGHT:
                     if (event.button.clicks == 2U) {
-                        image_viewer->maximize();
+                        auto it = image_viewer_map.find(event.button.windowID);
+                        if (it != image_viewer_map.end()) {
+                            it->second->maximize();
+                        }
                     }
                     break;
                 default:
@@ -100,11 +135,11 @@ int main(int argc, char** argv) {
                 break;
             default:
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
-                    // image_filepath =  pickImageDialog();
-                    // if (not image_filepath.empty()) {
-                    //     RET_FAIL_IF_FALSE(switchImage());
-                    //     repaint();
-                    // }
+                    image_filepath = pickImageDialog();
+                    if (not image_filepath.empty()) {
+                         auto image_viewer = ImageViewer::open(image_filepath);
+                        image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
+                    }
                 }
                 break;
             }
@@ -112,7 +147,7 @@ int main(int argc, char** argv) {
         SDL_Delay(1'000U / 60U);
     } while (running);
 
-    SDL_DelEventWatch(eventMonitor, &image_viewer);
+    SDL_DelEventWatch(eventMonitor, &image_viewer_map);
 
     return 0;
 }
