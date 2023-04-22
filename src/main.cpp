@@ -108,9 +108,7 @@ int main(int argc, char** argv) {
                     running &= !image_viewer_map.empty();
                 }
             case SDL_KEYDOWN:
-                switch (event.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                {
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
                     auto it = image_viewer_map.find(event.key.windowID);
                     if (it != image_viewer_map.end()) {
                         image_viewer_map.erase(it);
@@ -118,13 +116,8 @@ int main(int argc, char** argv) {
                     running &= !image_viewer_map.empty();
                     break;
                 }
-                default:
-                    break;
-                }
                 break;
             case SDL_MOUSEBUTTONDOWN:
-                switch (event.button.button) {
-                case SDL_BUTTON_LEFT:
                 case SDL_BUTTON_RIGHT:
                     if (event.button.clicks == 2U) {
                         auto it = image_viewer_map.find(event.button.windowID);
@@ -133,9 +126,6 @@ int main(int argc, char** argv) {
                         }
                     }
                     break;
-                default:
-                    break;
-                }
                 break;
             default:
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
