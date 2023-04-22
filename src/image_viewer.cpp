@@ -74,6 +74,11 @@ std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image
         SDL_WINDOW_RESIZABLE |
         SDL_WINDOW_ALLOW_HIGHDPI);
 
+    SDL_SetWindowHitTest(image_window.get(),
+        [](SDL_Window*, SDL_Point const*, void*) -> SDL_HitTestResult {
+            return SDL_HITTEST_DRAGGABLE;
+        }, nullptr);
+
     SDL_SysWMinfo image_window_manager_info{};
     if (not SDL_GetWindowWMInfo(image_window.get(), &image_window_manager_info)) {
         return {nullptr};
