@@ -47,5 +47,3 @@
     if (result != 0) { \
         std::cerr << #result << " failed: " << SDL_GetError() << '\n'; \
     }
-
-bool preamble() noexcept;

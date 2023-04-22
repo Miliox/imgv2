@@ -9,16 +9,25 @@ extern "C" {
 
 struct SDL_SysWMinfo;
 
-/// Maximize window, calling it again undo the operation
+/// Customize window title bar
+/// - Fill content
+/// - Hide title
+/// - Make transparent
+/// - Remove fullscreen button
+/// @note: call it again when leaving fullscreen
+void NativeWindow_customizeTitleBar(struct SDL_SysWMinfo* window_info);
+
+/// Customize window menu bar
+/// - Add 'File > Open File'
+/// - Emit user event to be handle in sdl event loop
+/// @note: call only once
+void NativeWindow_customizeMenu(struct SDL_SysWMinfo* window_info, uint32_t const menu_user_event_id);
+
+/// Maximize window
+/// @note call it again to undo the operation
 void NativeWindow_maximize(struct SDL_SysWMinfo* window_info);
 
-/// Show or hide the full screen button
-void NativeWindow_showFullScreenButton(struct SDL_SysWMinfo* window_info, bool visible);
-
-/// Set title bar transparent
-void NativeWindow_transparentTitleBar(struct SDL_SysWMinfo* window_info);
-
-void NativeWindow_populateMenu(struct SDL_SysWMinfo* window_info, uint32_t file_open_clicked_event_id);
+#define MENU_OPEN_FILE_ACTION 1
 
 #ifdef __cplusplus
 }
