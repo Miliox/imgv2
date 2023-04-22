@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "SDL.h"
+#include "SDL_syswm.h"
 #include "SDL_image.h"
 #include "SDLit.hpp"
 #include "portable-file-dialogs.h"

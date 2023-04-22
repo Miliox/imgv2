@@ -1,4 +1,5 @@
 #include "main.hpp"
+#include "nswindow_util.h"
 
 static int eventMonitor(void *userdata, SDL_Event *event);
 
@@ -79,6 +80,14 @@ int main(int argc, char** argv) {
         640, 480,
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     RET_FAIL_IF_NULL(window);
+
+    SDL_SysWMinfo wm_info{};
+    if (SDL_GetWindowWMInfo(window.get(), &wm_info)) {
+#ifdef __MACH__
+        NSWindow* cocoa_window = wm_info.info.cocoa.window;
+        NSWindowUtil_transparentTitle(cocoa_window);
+#endif
+    }
 
     auto const renderer = SDLit::make_unique(
         SDL_CreateRenderer, window.get(), -1,
