@@ -14,8 +14,6 @@ static bool switchImage(
     std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter>& image_texture,
     std::filesystem::path const& image_filepath);
 
-static const char* stringify(SDL_WindowEventID const id);
-
 static void updateWindowDecoration(SDL_Window* window);
 
 static void maximizeWindow(SDL_Window* window);
@@ -85,7 +83,6 @@ int main(int argc, char** argv) {
                 running = false;
                 break;
             case SDL_WINDOWEVENT:
-                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "window evt: %s", stringify(static_cast<SDL_WindowEventID>(event.window.event)));
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
                     repaint();
                 }
@@ -134,10 +131,6 @@ int main(int argc, char** argv) {
 
 int eventMonitor(void* repaint_callback, SDL_Event* event) {
     // Refresh while resizing window
-    if (event->type == SDL_WINDOWEVENT) {
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "cb window evt: %s", stringify(static_cast<SDL_WindowEventID>(event->window.event)));
-    }
-
     if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
         if (repaint_callback != nullptr) {
             static_cast<std::function<void()>*>(repaint_callback)->operator()();
@@ -213,50 +206,6 @@ static bool switchImage(
     SDL_SetWindowSize(window.get(), window_rect.w, window_rect.h);
     SDL_SetWindowPosition(window.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     return true;
-}
-
-const char* stringify(SDL_WindowEventID const id) {
-    switch (id) {
-    case SDL_WINDOWEVENT_NONE:
-        return "SDL_WINDOWEVENT_NONE";
-    case SDL_WINDOWEVENT_SHOWN:
-        return "SDL_WINDOWEVENT_SHOWN";
-    case SDL_WINDOWEVENT_HIDDEN:
-        return "SDL_WINDOWEVENT_HIDDEN";
-    case SDL_WINDOWEVENT_EXPOSED:
-        return "SDL_WINDOWEVENT_EXPOSED";
-    case SDL_WINDOWEVENT_MOVED:
-        return "SDL_WINDOWEVENT_MOVED";
-    case SDL_WINDOWEVENT_RESIZED:
-        return "SDL_WINDOWEVENT_RESIZED";
-    case SDL_WINDOWEVENT_SIZE_CHANGED:
-        return "SDL_WINDOWEVENT_SIZE_CHANGED";
-    case SDL_WINDOWEVENT_MINIMIZED:
-        return "SDL_WINDOWEVENT_MINIMIZED";
-    case SDL_WINDOWEVENT_MAXIMIZED:
-        return "SDL_WINDOWEVENT_MAXIMIZED";
-    case SDL_WINDOWEVENT_RESTORED:
-        return "SDL_WINDOWEVENT_RESTORED";
-    case SDL_WINDOWEVENT_ENTER:
-        return "SDL_WINDOWEVENT_ENTER";
-    case SDL_WINDOWEVENT_LEAVE:
-        return "SDL_WINDOWEVENT_LEAVE";
-    case SDL_WINDOWEVENT_FOCUS_GAINED:
-        return "SDL_WINDOWEVENT_FOCUS_GAINED";
-    case SDL_WINDOWEVENT_FOCUS_LOST:
-        return "SDL_WINDOWEVENT_FOCUS_LOST";
-    case SDL_WINDOWEVENT_CLOSE:
-        return "SDL_WINDOWEVENT_CLOSE";
-    case SDL_WINDOWEVENT_TAKE_FOCUS:
-        return "SDL_WINDOWEVENT_TAKE_FOCUS";
-    case SDL_WINDOWEVENT_HIT_TEST:
-        return "SDL_WINDOWEVENT_HIT_TEST";
-    case SDL_WINDOWEVENT_ICCPROF_CHANGED:
-        return "SDL_WINDOWEVENT_ICCPROF_CHANGED";
-    case SDL_WINDOWEVENT_DISPLAY_CHANGED:
-        return "SDL_WINDOWEVENT_DISPLAY_CHANGED";
-    }
-    return "???";
 }
 
 void populateMenu(SDL_Window* window, std::uint32_t open_file_event_id) {
