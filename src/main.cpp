@@ -12,101 +12,13 @@ static bool switchImage(
     std::unique_ptr<SDL_Window, SDLit::SDL_Deleter> const& window,
     std::unique_ptr<SDL_Renderer, SDLit::SDL_Deleter> const& renderer,
     std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter>& image_texture,
-    std::filesystem::path const& image_filepath) {
+    std::filesystem::path const& image_filepath);
 
-    image_texture = SDLit::make_unique(IMG_LoadTexture, renderer.get(), image_filepath.c_str());
-    if (not image_texture) {
-        return false;
-    }
+static const char* stringify(SDL_WindowEventID const id);
 
-    SDL_Rect image_rect{};
-    if (SDL_QueryTexture(image_texture.get(), nullptr, nullptr, &image_rect.w, &image_rect.h)) {
-        return false;
-    }
+static void updateWindowDecoration(SDL_Window* window);
 
-    SDL_Rect desktop_rect{};
-    if (SDL_GetDisplayUsableBounds(SDL_GetWindowDisplayIndex(window.get()), &desktop_rect)) {
-        return false;
-    }
-
-    desktop_rect.w -= desktop_rect.x;
-    desktop_rect.h -= desktop_rect.y;
-    desktop_rect.x = 0;
-    desktop_rect.y = 0;
-
-    SDL_Rect window_rect{};
-    if (image_rect.w > desktop_rect.w || image_rect.h > desktop_rect.h) {
-        SDL_FRect window_rect_f = resizeToFit(image_rect, desktop_rect);
-        window_rect.x = static_cast<int>(window_rect_f.x);
-        window_rect.y = static_cast<int>(window_rect_f.y);
-        window_rect.w = static_cast<int>(window_rect_f.w);
-        window_rect.h = static_cast<int>(window_rect_f.h);
-    } else {
-        window_rect = image_rect;
-    }
-
-    SDL_SetWindowTitle(window.get(), image_filepath.filename().c_str());
-    SDL_SetWindowSize(window.get(), window_rect.w, window_rect.h);
-    SDL_SetWindowPosition(window.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-    return true;
-}
-
-const char* stringify(SDL_WindowEventID const id) {
-    switch (id) {
-    case SDL_WINDOWEVENT_NONE:
-        return "SDL_WINDOWEVENT_NONE";
-    case SDL_WINDOWEVENT_SHOWN:
-        return "SDL_WINDOWEVENT_SHOWN";
-    case SDL_WINDOWEVENT_HIDDEN:
-        return "SDL_WINDOWEVENT_HIDDEN";
-    case SDL_WINDOWEVENT_EXPOSED:
-        return "SDL_WINDOWEVENT_EXPOSED";
-    case SDL_WINDOWEVENT_MOVED:
-        return "SDL_WINDOWEVENT_MOVED";
-    case SDL_WINDOWEVENT_RESIZED:
-        return "SDL_WINDOWEVENT_RESIZED";
-    case SDL_WINDOWEVENT_SIZE_CHANGED:
-        return "SDL_WINDOWEVENT_SIZE_CHANGED";
-    case SDL_WINDOWEVENT_MINIMIZED:
-        return "SDL_WINDOWEVENT_MINIMIZED";
-    case SDL_WINDOWEVENT_MAXIMIZED:
-        return "SDL_WINDOWEVENT_MAXIMIZED";
-    case SDL_WINDOWEVENT_RESTORED:
-        return "SDL_WINDOWEVENT_RESTORED";
-    case SDL_WINDOWEVENT_ENTER:
-        return "SDL_WINDOWEVENT_ENTER";
-    case SDL_WINDOWEVENT_LEAVE:
-        return "SDL_WINDOWEVENT_LEAVE";
-    case SDL_WINDOWEVENT_FOCUS_GAINED:
-        return "SDL_WINDOWEVENT_FOCUS_GAINED";
-    case SDL_WINDOWEVENT_FOCUS_LOST:
-        return "SDL_WINDOWEVENT_FOCUS_LOST";
-    case SDL_WINDOWEVENT_CLOSE:
-        return "SDL_WINDOWEVENT_CLOSE";
-    case SDL_WINDOWEVENT_TAKE_FOCUS:
-        return "SDL_WINDOWEVENT_TAKE_FOCUS";
-    case SDL_WINDOWEVENT_HIT_TEST:
-        return "SDL_WINDOWEVENT_HIT_TEST";
-    case SDL_WINDOWEVENT_ICCPROF_CHANGED:
-        return "SDL_WINDOWEVENT_ICCPROF_CHANGED";
-    case SDL_WINDOWEVENT_DISPLAY_CHANGED:
-        return "SDL_WINDOWEVENT_DISPLAY_CHANGED";
-    }
-    return "???";
-}
-
-void updateWindowDecoration(SDL_Window* window) {
-    SDL_SysWMinfo info{};
-    SDL_GetWindowWMInfo(window, &info);
-    NativeWindow_showFullScreenButton(&info, false);
-    NativeWindow_transparentTitleBar(&info);
-}
-
-void maximizeWindow(SDL_Window* window) {
-    SDL_SysWMinfo info{};
-    SDL_GetWindowWMInfo(window, &info);
-    NativeWindow_maximize(&info);
-}
+static void maximizeWindow(SDL_Window* window);
 
 int main(int argc, char** argv) {
     if (argc > 2) {
@@ -240,4 +152,104 @@ bool preamble() noexcept {
     }
 
     return true;
+}
+
+static bool switchImage(
+    std::unique_ptr<SDL_Window, SDLit::SDL_Deleter> const& window,
+    std::unique_ptr<SDL_Renderer, SDLit::SDL_Deleter> const& renderer,
+    std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter>& image_texture,
+    std::filesystem::path const& image_filepath) {
+
+    image_texture = SDLit::make_unique(IMG_LoadTexture, renderer.get(), image_filepath.c_str());
+    if (not image_texture) {
+        return false;
+    }
+
+    SDL_Rect image_rect{};
+    if (SDL_QueryTexture(image_texture.get(), nullptr, nullptr, &image_rect.w, &image_rect.h)) {
+        return false;
+    }
+
+    SDL_Rect desktop_rect{};
+    if (SDL_GetDisplayUsableBounds(SDL_GetWindowDisplayIndex(window.get()), &desktop_rect)) {
+        return false;
+    }
+
+    desktop_rect.w -= desktop_rect.x;
+    desktop_rect.h -= desktop_rect.y;
+    desktop_rect.x = 0;
+    desktop_rect.y = 0;
+
+    SDL_Rect window_rect{};
+    if (image_rect.w > desktop_rect.w || image_rect.h > desktop_rect.h) {
+        SDL_FRect window_rect_f = resizeToFit(image_rect, desktop_rect);
+        window_rect.x = static_cast<int>(window_rect_f.x);
+        window_rect.y = static_cast<int>(window_rect_f.y);
+        window_rect.w = static_cast<int>(window_rect_f.w);
+        window_rect.h = static_cast<int>(window_rect_f.h);
+    } else {
+        window_rect = image_rect;
+    }
+
+    SDL_SetWindowTitle(window.get(), image_filepath.filename().c_str());
+    SDL_SetWindowSize(window.get(), window_rect.w, window_rect.h);
+    SDL_SetWindowPosition(window.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    return true;
+}
+
+const char* stringify(SDL_WindowEventID const id) {
+    switch (id) {
+    case SDL_WINDOWEVENT_NONE:
+        return "SDL_WINDOWEVENT_NONE";
+    case SDL_WINDOWEVENT_SHOWN:
+        return "SDL_WINDOWEVENT_SHOWN";
+    case SDL_WINDOWEVENT_HIDDEN:
+        return "SDL_WINDOWEVENT_HIDDEN";
+    case SDL_WINDOWEVENT_EXPOSED:
+        return "SDL_WINDOWEVENT_EXPOSED";
+    case SDL_WINDOWEVENT_MOVED:
+        return "SDL_WINDOWEVENT_MOVED";
+    case SDL_WINDOWEVENT_RESIZED:
+        return "SDL_WINDOWEVENT_RESIZED";
+    case SDL_WINDOWEVENT_SIZE_CHANGED:
+        return "SDL_WINDOWEVENT_SIZE_CHANGED";
+    case SDL_WINDOWEVENT_MINIMIZED:
+        return "SDL_WINDOWEVENT_MINIMIZED";
+    case SDL_WINDOWEVENT_MAXIMIZED:
+        return "SDL_WINDOWEVENT_MAXIMIZED";
+    case SDL_WINDOWEVENT_RESTORED:
+        return "SDL_WINDOWEVENT_RESTORED";
+    case SDL_WINDOWEVENT_ENTER:
+        return "SDL_WINDOWEVENT_ENTER";
+    case SDL_WINDOWEVENT_LEAVE:
+        return "SDL_WINDOWEVENT_LEAVE";
+    case SDL_WINDOWEVENT_FOCUS_GAINED:
+        return "SDL_WINDOWEVENT_FOCUS_GAINED";
+    case SDL_WINDOWEVENT_FOCUS_LOST:
+        return "SDL_WINDOWEVENT_FOCUS_LOST";
+    case SDL_WINDOWEVENT_CLOSE:
+        return "SDL_WINDOWEVENT_CLOSE";
+    case SDL_WINDOWEVENT_TAKE_FOCUS:
+        return "SDL_WINDOWEVENT_TAKE_FOCUS";
+    case SDL_WINDOWEVENT_HIT_TEST:
+        return "SDL_WINDOWEVENT_HIT_TEST";
+    case SDL_WINDOWEVENT_ICCPROF_CHANGED:
+        return "SDL_WINDOWEVENT_ICCPROF_CHANGED";
+    case SDL_WINDOWEVENT_DISPLAY_CHANGED:
+        return "SDL_WINDOWEVENT_DISPLAY_CHANGED";
+    }
+    return "???";
+}
+
+void updateWindowDecoration(SDL_Window* window) {
+    SDL_SysWMinfo info{};
+    SDL_GetWindowWMInfo(window, &info);
+    NativeWindow_showFullScreenButton(&info, false);
+    NativeWindow_transparentTitleBar(&info);
+}
+
+void maximizeWindow(SDL_Window* window) {
+    SDL_SysWMinfo info{};
+    SDL_GetWindowWMInfo(window, &info);
+    NativeWindow_maximize(&info);
 }
