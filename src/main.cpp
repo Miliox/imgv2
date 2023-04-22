@@ -1,25 +1,11 @@
 #include "main.hpp"
+#include "image_viewer.hpp"
 #include "native_window.h"
 
 static int eventMonitor(void *userdata, SDL_Event *event);
 
 static int SDL_SetRenderDrawColorEx(SDL_Renderer* renderer, SDL_Color color) {
     return SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-}
-
-static SDL_FRect fitInside(SDL_Rect const& src, SDL_Rect const& dst);
-
-static std::filesystem::path pickImage() {
-    auto const result = pfd::open_file{
-        "Pick an image file to view",
-        pfd::path::home(),
-        { "All images", "*.bmp *.jpg *.jpeg *.png *.qoi" }
-    }.result();
-
-    if (result.empty()) {
-        return {};
-    }
-    return std::filesystem::path{result.front()};
 }
 
 static bool switchImage(
@@ -50,7 +36,7 @@ static bool switchImage(
 
     SDL_Rect window_rect{};
     if (image_rect.w > desktop_rect.w || image_rect.h > desktop_rect.h) {
-        SDL_FRect window_rect_f = fitInside(image_rect, desktop_rect);
+        SDL_FRect window_rect_f = resizeToFit(image_rect, desktop_rect);
         window_rect.x = static_cast<int>(window_rect_f.x);
         window_rect.y = static_cast<int>(window_rect_f.y);
         window_rect.w = static_cast<int>(window_rect_f.w);
@@ -145,7 +131,7 @@ int main(int argc, char** argv) {
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     RET_FAIL_IF_NULL(renderer);
 
-    std::filesystem::path image_filepath = (argc == 2) ? argv[1] : pickImage();
+    std::filesystem::path image_filepath = (argc == 2) ? argv[1] : pickImageDialog();
     RET_FAIL_IF_EMPTY(image_filepath);
 
     std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter> image_texture{nullptr};
@@ -157,7 +143,7 @@ int main(int argc, char** argv) {
 
         SDL_Rect image_rect{};
         WARN_IF_FAIL(SDL_QueryTexture(image_texture.get(), nullptr, nullptr, &image_rect.w, &image_rect.h));
-        SDL_FRect viewport_rect_f = fitInside(image_rect, window_rect);
+        SDL_FRect viewport_rect_f = resizeToFit(image_rect, window_rect);
 
         WARN_IF_FAIL(SDL_SetRenderDrawColorEx(renderer.get(), SDL_Color{0xC0, 0xC0, 0xC0, 0xFF}));
         WARN_IF_FAIL(SDL_RenderClear(renderer.get()));
@@ -170,7 +156,6 @@ int main(int argc, char** argv) {
     // at the end of resizing operation. This allows the image to be responsive during the resizing.
     SDL_AddEventWatch(eventMonitor, &repaint);
 
-    bool fullscreen{false};
     bool running{true};
     SDL_Event event{};
     do {
@@ -182,7 +167,6 @@ int main(int argc, char** argv) {
             case SDL_WINDOWEVENT:
                 SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "window evt: %s", stringify(static_cast<SDL_WindowEventID>(event.window.event)));
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
-                    updateWindowDecoration(window.get());
                     repaint();
                 }
             case SDL_KEYDOWN:
@@ -199,8 +183,6 @@ int main(int argc, char** argv) {
                 case SDL_BUTTON_LEFT:
                 case SDL_BUTTON_RIGHT:
                     if (event.button.clicks == 2U) {
-                        // fullscreen = !fullscreen;
-                        // SDL_SetWindowFullscreen(window.get(), fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
                         maximizeWindow(window.get());
                     }
                     break;
@@ -232,28 +214,6 @@ int eventMonitor(void* repaint_callback, SDL_Event* event) {
         }
     }
     return 1;
-}
-
-SDL_FRect fitInside(SDL_Rect const& src, SDL_Rect const& dst) {
-    float const src_ratio = static_cast<float>(src.w) / static_cast<float>(src.h);
-
-    float const adjusted_width  = static_cast<float>(dst.h) * src_ratio;
-    float const adjusted_height = static_cast<float>(dst.w) / src_ratio;
-
-    SDL_FRect result{};
-    if (adjusted_width <= dst.w) {
-        result.x = (dst.w - adjusted_width) / 2;
-        result.y = 0.0f;
-        result.w = adjusted_width;
-        result.h = dst.h;
-    } else {
-        result.x = 0.0f;
-        result.y = (dst.h - adjusted_height) / 2;
-        result.w = dst.w;
-        result.h = adjusted_height;
-    }
-
-    return result;
 }
 
 bool preamble() noexcept {

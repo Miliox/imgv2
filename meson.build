@@ -32,4 +32,4 @@ imgv2_dep = declare_dependency(
   dependencies: [sdlit_dep, pfd_dep, native_window_dep],
   link_with: [sdlit_lib],
 )
-imgv2_exe = executable('imgv2', ['src/main.cpp'], win_subsystem: 'windows', dependencies: imgv2_dep)
+imgv2_exe = executable('imgv2', ['src/main.cpp', 'src/image_viewer.cpp'], win_subsystem: 'windows', dependencies: imgv2_dep)
