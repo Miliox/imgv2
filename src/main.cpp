@@ -2,6 +2,7 @@
 #include "image_viewer.hpp"
 #include "native_window.h"
 
+#include <chrono>
 #include <unordered_map>
 
 using ImageViewerMap = std::unordered_map<std::uint32_t, std::unique_ptr<ImageViewer>>;
@@ -58,6 +59,7 @@ static bool preamble() noexcept {
 }
 
 int main(int argc, char** argv) {
+    auto const initialization_startup_timestamp = std::chrono::steady_clock().now();
     for (int i = 1; i < argc; ++i) {
         auto arg_view = std::string_view{argv[i]};
         if (arg_view.starts_with("-")) {
@@ -93,6 +95,8 @@ int main(int argc, char** argv) {
         openImages(image_viewer_map, image_paths);
         RET_FAIL_IF_EMPTY(image_viewer_map);
     }
+    auto const initialization_completed_timestamp = std::chrono::steady_clock().now();
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "initialization took %lf seconds", std::chrono::duration_cast<std::chrono::duration<double>>(initialization_completed_timestamp - initialization_startup_timestamp).count());
 
     // Repaint inside the eventMonitor because SDL_PollEvent only emits SDL_WINDOWEVENT_SIZE_CHANGED
     // at the end of resizing operation. This allows the image to be responsive during the resizing.
