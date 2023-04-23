@@ -118,6 +118,7 @@ std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image
     image_viewer->resize();
     image_viewer->center();
     image_viewer->repaint();
+    image_viewer->focus();
 
     return image_viewer;
 }
@@ -149,6 +150,11 @@ bool ImageViewer::center() noexcept {
 
 bool ImageViewer::customizeTitlebar() noexcept {
     NativeWindow_customizeTitleBar(&m_window_info);
+    return true;
+}
+
+bool ImageViewer::focus() noexcept {
+    SDL_RaiseWindow(m_window.get());
     return true;
 }
 

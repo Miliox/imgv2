@@ -31,6 +31,7 @@ public:
 
     bool center() noexcept;
     bool customizeTitlebar() noexcept;
+    bool focus() noexcept;
     bool maximize() noexcept;
     bool repaint() noexcept;
     bool resize() noexcept;
