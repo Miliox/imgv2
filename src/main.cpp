@@ -58,9 +58,18 @@ static bool preamble() noexcept {
 }
 
 int main(int argc, char** argv) {
-    if (argc > 2) {
-        std::cerr << "Usage: " << argv[0] << " [IMAGE1] ...\n";
-        return EXIT_FAILURE;
+    for (int i = 1; i < argc; ++i) {
+        auto arg_view = std::string_view{argv[i]};
+        if (arg_view.starts_with("-")) {
+            std::cerr << "ImageViewer V2\n\n";
+            std::cerr << "imgv2 is a simple and minimalist cross platform image viewer.\n\n";
+            std::cerr << "USAGE: \n";
+            std::cerr << "    " << argv[0] << " [IMAGE ...]\n";
+            std::cerr << "    " << argv[0] << " -h\n";
+            std::cerr << "    " << argv[0] << " --help\n";
+
+            return (arg_view == "--help" || arg_view == "-h") ? EXIT_SUCCESS : EXIT_FAILURE;
+        }
     }
     RET_FAIL_IF_FALSE(preamble());
 
