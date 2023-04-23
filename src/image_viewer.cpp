@@ -61,6 +61,7 @@ SDL_FRect resizeToFit(SDL_Rect const& src, SDL_Rect const& dst) {
 }
 
 std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image_path) noexcept {
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading %s", image_path.c_str());
     auto image_surface = SDLit::make_unique(IMG_Load, image_path.c_str());
     if (not image_surface) {
         return {nullptr};
@@ -119,6 +120,10 @@ std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image
     image_viewer->center();
     image_viewer->repaint();
     image_viewer->focus();
+
+    // Force window to appear immediately by pumping sdl events
+    SDL_PumpEvents();
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Displaying %s", image_path.c_str());
 
     return image_viewer;
 }
