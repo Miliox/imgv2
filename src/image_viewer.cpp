@@ -174,23 +174,35 @@ bool ImageViewer::resize() noexcept {
         return false;
     }
 
-    SDL_Rect desktop_rect{};
-    if (SDL_GetDisplayUsableBounds(SDL_GetWindowDisplayIndex(m_window.get()), &desktop_rect)) {
+    SDL_SetError("");
+    int const display_index = SDL_GetWindowDisplayIndex(m_window.get());
+    if (display_index < 0) {
         return false;
     }
 
-    desktop_rect.w -= desktop_rect.x;
-    desktop_rect.h -= desktop_rect.y;
-    desktop_rect.x = 0;
-    desktop_rect.y = 0;
+    SDL_Rect desktop_rect{};
+    if (SDL_GetDisplayUsableBounds(display_index, &desktop_rect)) {
+        return false;
+    }
+
+#if __MACH__
+    // When opening multiple image in a row, SDL_GetDisplayUsableBounds may fail to account for the
+    // portions reserved by the system because platform limitations on macOS when windows are off-screen.
+    //
+    // See: Cocoa_GetWindowDisplayIndex (NSWindow.screen may be nil when the window is off-screen.)
+    if  (SDL_GetError() == std::string{"Couldn't find the display where the window is located."}) {
+        desktop_rect.y = 25; // Is this always the same value?
+        desktop_rect.h -= desktop_rect.y;
+    }
+#endif
 
     SDL_Rect window_rect{};
     if (image_rect.w > desktop_rect.w || image_rect.h > desktop_rect.h) {
         SDL_FRect window_rect_f = resizeToFit(image_rect, desktop_rect);
-        window_rect.x = static_cast<int>(window_rect_f.x);
-        window_rect.y = static_cast<int>(window_rect_f.y);
-        window_rect.w = static_cast<int>(window_rect_f.w);
-        window_rect.h = static_cast<int>(window_rect_f.h);
+        window_rect.x = static_cast<int>(SDL_floorf(window_rect_f.x));
+        window_rect.y = static_cast<int>(SDL_floorf(window_rect_f.y));
+        window_rect.w = static_cast<int>(SDL_floorf(window_rect_f.w));
+        window_rect.h = static_cast<int>(SDL_floorf(window_rect_f.h));
     } else {
         window_rect = image_rect;
     }
