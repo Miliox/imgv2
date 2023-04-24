@@ -102,13 +102,12 @@ int main(int argc, char** argv) {
     // at the end of resizing operation. This allows the image to be responsive during the resizing.
     SDL_AddEventWatch(eventMonitor, &image_viewer_map);
 
-    bool running{true};
     SDL_Event event{};
-    do {
+    while (not image_viewer_map.empty()) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
             case SDL_QUIT:
-                running &= false;
+                image_viewer_map.clear();
                 break;
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
@@ -128,7 +127,6 @@ int main(int argc, char** argv) {
                     if (it != image_viewer_map.end()) {
                         image_viewer_map.erase(it);
                     }
-                    running &= !image_viewer_map.empty();
                 }
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -136,7 +134,6 @@ int main(int argc, char** argv) {
                     if (it != image_viewer_map.end()) {
                         image_viewer_map.erase(it);
                     }
-                    running &= !image_viewer_map.empty();
                     break;
                 }
                 break;
@@ -158,7 +155,7 @@ int main(int argc, char** argv) {
             }
         }
         SDL_Delay(1'000U / 60U);
-    } while (running);
+    }
 
     SDL_DelEventWatch(eventMonitor, &image_viewer_map);
 
