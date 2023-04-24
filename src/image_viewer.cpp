@@ -149,7 +149,7 @@ SDL_Renderer* ImageViewer::renderer() const noexcept { return m_renderer.get(); 
 SDL_Texture* ImageViewer::texture() const noexcept { return m_texture.get(); }
 
 bool ImageViewer::center() noexcept {
-    SDL_SetWindowPosition(m_window.get(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED);
+    SDL_SetWindowPosition(m_window.get(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_CENTERED);
     return true;
 }
 
