@@ -147,6 +147,9 @@ int main(int argc, char** argv) {
                     }
                     break;
                 break;
+            case SDL_DROPFILE:
+                openImages(image_viewer_map, std::vector<std::filesystem::path>{std::filesystem::path{event.drop.file}});
+                break;
             default:
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
                     openImages(image_viewer_map, pickImageDialog());
