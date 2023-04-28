@@ -61,9 +61,12 @@ int main(int argc, char** argv) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
             case SDL_QUIT:
+            {
                 image_viewer_map.clear();
                 break;
+            }
             case SDL_WINDOWEVENT:
+            {
                 if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
                     auto it = image_viewer_map.find(event.window.windowID);
                     if (it != image_viewer_map.end()) {
@@ -80,7 +83,10 @@ int main(int argc, char** argv) {
                         image_viewer_map.erase(it);
                     }
                 }
+                break;
+            }
             case SDL_KEYDOWN:
+            {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     auto it = image_viewer_map.find(event.key.windowID);
                     if (it != image_viewer_map.end()) {
@@ -89,22 +95,44 @@ int main(int argc, char** argv) {
                     break;
                 }
                 break;
+            }
             case SDL_MOUSEBUTTONDOWN:
-                if (event.button.button == SDL_BUTTON_LEFT && event.button.clicks == 2U) {
-                    auto it = image_viewer_map.find(event.button.windowID);
-                    if (it != image_viewer_map.end()) {
-                        it->second->maximize();
-                    }
+            case SDL_MOUSEBUTTONUP:
+            {
+                auto it = image_viewer_map.find(event.button.windowID);
+                if (it != image_viewer_map.end()) {
+                    it->second->processMouseButtonEvent(event.button);
                 }
                 break;
+            }
+            case SDL_MOUSEMOTION:
+            {
+                auto it = image_viewer_map.find(event.motion.windowID);
+                if (it != image_viewer_map.end()) {
+                    it->second->processMouseMotionEvent(event.motion);
+                }
+                break;
+            }
+            case SDL_MOUSEWHEEL:
+            {
+                auto it = image_viewer_map.find(event.wheel.windowID);
+                if (it != image_viewer_map.end()) {
+                    it->second->processMouseWheelEvent(event.wheel);
+                }
+                break;
+            }
             case SDL_DROPFILE:
+            {
                 openImages(image_viewer_map, ImagePaths{{event.drop.file}});
                 break;
+            }
             default:
+            {
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
                     openImages(image_viewer_map, pickImageDialog());
                 }
                 break;
+            }
             }
         }
         SDL_Delay(1'000U / 60U);

@@ -237,3 +237,17 @@ bool ImageViewer::repaint() noexcept {
     SDL_RenderPresent(m_renderer.get());
     return true;
 }
+
+void ImageViewer::processMouseButtonEvent(SDL_MouseButtonEvent const& event) {
+    if (event.type == SDL_MOUSEBUTTONDOWN && event.button == SDL_BUTTON_LEFT && event.clicks == 2U) {
+        maximize();
+    }
+}
+
+void ImageViewer::processMouseMotionEvent(SDL_MouseMotionEvent const& event) {
+
+}
+
+void ImageViewer::processMouseWheelEvent(SDL_MouseWheelEvent const& event) {
+
+}

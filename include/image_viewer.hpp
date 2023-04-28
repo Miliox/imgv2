@@ -36,6 +36,10 @@ public:
     bool repaint() noexcept;
     bool resize() noexcept;
 
+    void processMouseButtonEvent(SDL_MouseButtonEvent const& event);
+    void processMouseMotionEvent(SDL_MouseMotionEvent const& event);
+    void processMouseWheelEvent(SDL_MouseWheelEvent const& event);
+
 private:
     explicit ImageViewer(
         std::filesystem::path image_path,
