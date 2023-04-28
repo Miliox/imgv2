@@ -36,6 +36,9 @@ public:
     bool repaint() noexcept;
     bool resize() noexcept;
 
+    void flipHorizontal() noexcept;
+    void flipVertical() noexcept;
+
     void processMouseButtonEvent(SDL_MouseButtonEvent const& event);
     void processMouseMotionEvent(SDL_MouseMotionEvent const& event);
     void processMouseWheelEvent(SDL_MouseWheelEvent const& event);
@@ -53,4 +56,5 @@ private:
     std::unique_ptr<SDL_Window, SDLit::SDL_Deleter> m_window;
     std::unique_ptr<SDL_Renderer, SDLit::SDL_Deleter> m_renderer;
     std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter> m_texture;
+    SDL_RendererFlip m_flip{};
 };

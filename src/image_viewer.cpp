@@ -231,12 +231,37 @@ bool ImageViewer::repaint() noexcept {
         return false;
     }
 
-    if (SDL_RenderCopyF(m_renderer.get(), m_texture.get(), nullptr, &viewport_frect)) {
+    if (SDL_RenderCopyExF(
+            m_renderer.get(),
+            m_texture.get(),
+            nullptr,
+            &viewport_frect,
+            0,
+            nullptr,
+            m_flip)) {
         return false;
     }
 
     SDL_RenderPresent(m_renderer.get());
     return true;
+}
+
+void ImageViewer::flipHorizontal() noexcept {
+    if (m_flip & SDL_FLIP_HORIZONTAL) {
+        m_flip = static_cast<SDL_RendererFlip>(m_flip & ~SDL_FLIP_HORIZONTAL);
+    } else {
+        m_flip = static_cast<SDL_RendererFlip>(m_flip | SDL_FLIP_HORIZONTAL);
+    }
+    repaint();
+}
+
+void ImageViewer::flipVertical() noexcept {
+    if (m_flip & SDL_FLIP_VERTICAL) {
+        m_flip = static_cast<SDL_RendererFlip>(m_flip & ~SDL_FLIP_VERTICAL);
+    } else {
+        m_flip = static_cast<SDL_RendererFlip>(m_flip | SDL_FLIP_VERTICAL);
+    }
+    repaint();
 }
 
 void ImageViewer::processMouseButtonEvent(SDL_MouseButtonEvent const& event) {

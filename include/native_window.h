@@ -34,6 +34,8 @@ void NativeWindow_customizeWindowMenu(struct SDL_SysWMinfo* window_info, uint32_
 void NativeWindow_maximize(struct SDL_SysWMinfo* window_info);
 
 #define MENU_OPEN_FILE_ACTION 1
+#define MENU_EDIT_FLIP_HORIZONTAL_ACTION 2
+#define MENU_EDIT_FLIP_VERTICAL_ACTION 3
 
 #ifdef __cplusplus
 }

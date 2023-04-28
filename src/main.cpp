@@ -122,6 +122,16 @@ int main(int argc, char** argv) {
             {
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
                     openImages(image_viewer_map, pickImageDialog());
+                } else if (event.type == menu_user_event_id && event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION) {
+                    auto it = image_viewer_map.find(event.user.windowID);
+                    if (it != image_viewer_map.end()) {
+                        it->second->flipHorizontal();
+                    }
+                } else if (event.type == menu_user_event_id && event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION) {
+                    auto it = image_viewer_map.find(event.user.windowID);
+                    if (it != image_viewer_map.end()) {
+                        it->second->flipVertical();
+                    }
                 }
                 break;
             }
@@ -134,7 +144,6 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
 
 int eventMonitor(void* context, SDL_Event* event) noexcept {
     // Refresh while resizing window
