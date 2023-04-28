@@ -59,20 +59,5 @@ void NativeWindow_customizeApplicationMenu(uint32_t const menu_user_event_id) {
 }
 
 void NativeWindow_customizeWindowMenu(struct SDL_SysWMinfo* window_info, uint32_t const menu_user_event_id) {
-    g_menu_user_event_id = menu_user_event_id;
-
-    NSWindow* native_window = window_info->info.cocoa.window;
-    NSMenu* main_menu = [native_window menu];
-
-    NSMenuItem* file_submenu_item = [main_menu insertItemWithTitle:@"File Submenu" action:nil keyEquivalent:@"" atIndex:1];
-    NSMenu*     file_submenu = [[NSMenu alloc] initWithTitle:@"File"];
-    [main_menu setSubmenu:file_submenu forItem:file_submenu_item];
-
-    NSMenuItem* open_file_item = [file_submenu addItemWithTitle:@"Open File" action:@selector(requestOpenFile) keyEquivalent:@"o"];
-
-    MenuHandler* menu_handler = [[MenuHandler alloc] init];
-    [open_file_item setTarget:menu_handler];
-
-    // [menu_handler release]; // Release will disable the menu
-    [file_submenu release];
+    // NOP
 }
