@@ -1,5 +1,6 @@
 #include "image_viewer.hpp"
 
+#include <string_view>
 #include <utility>
 
 #include "native_window.h"
@@ -190,7 +191,7 @@ bool ImageViewer::resize() noexcept {
     // portions reserved by the system because platform limitations on macOS when windows are off-screen.
     //
     // See: Cocoa_GetWindowDisplayIndex (NSWindow.screen may be nil when the window is off-screen.)
-    if  (SDL_GetError() == std::string{"Couldn't find the display where the window is located."}) {
+    if  (SDL_GetError() == std::string_view{"Couldn't find the display where the window is located."}) {
         desktop_rect.y = 25; // Is this always the same value?
         desktop_rect.h -= desktop_rect.y;
     }
