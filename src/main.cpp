@@ -5,58 +5,12 @@
 #include <chrono>
 #include <unordered_map>
 
+static bool preamble() noexcept;
+static int eventMonitor(void* repaint_callback, SDL_Event* event) noexcept;
+
 using ImageViewerMap = std::unordered_map<std::uint32_t, std::unique_ptr<ImageViewer>>;
-
-static int eventMonitor(void* repaint_callback, SDL_Event* event) {
-    // Refresh while resizing window
-    if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-        if (repaint_callback != nullptr) {
-            ImageViewerMap* image_viewer_map = static_cast<ImageViewerMap*>(repaint_callback);
-            auto it = image_viewer_map->find(event->window.windowID);
-            if (it != image_viewer_map->end()) {
-                it->second->repaint();
-            }
-        }
-    }
-    return 1;
-}
-
-static void openImages(ImageViewerMap& image_viewer_map, std::vector<std::filesystem::path> const& image_paths) {
-    for (auto const& image_path  : image_paths) {
-        auto image_viewer = ImageViewer::open(image_path);
-        if (image_viewer) {
-            image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
-        } else {
-            std::cerr << "Failed to open '" << image_path << "': " << SDL_GetError() << '\n';
-        }
-    }
-}
-
-static bool preamble() noexcept {
-    if (not pfd::settings::available())
-    {
-        SDL_SetError("this platform has no portable-file-dialogs backend.");
-        return false;
-    }
-
-    SDLit::init(SDL_INIT_VIDEO, IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_WEBP);
-
-    std::vector<std::pair<std::string, std::string>> const hints{
-        {SDL_HINT_IME_SHOW_UI, "1"},
-        {SDL_HINT_RENDER_SCALE_QUALITY, "best"},
-        {SDL_HINT_RENDER_VSYNC, "1"},
-        {SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1"}
-    };
-
-    for (auto const& hint : hints) {
-        if (not SDL_SetHint(hint.first.c_str(), hint.second.c_str())) {
-            SDL_SetError("failed to set hint %s=%s: %s", hint.first.c_str(), hint.second.c_str(), std::string{SDL_GetError()}.c_str());
-            return false;
-        }
-    }
-
-    return true;
-}
+using ImagePaths = std::vector<std::filesystem::path>;
+static void openImages(ImageViewerMap& image_viewer_map, ImagePaths const& image_paths) noexcept;
 
 int main(int argc, char** argv) {
     auto const initialization_startup_timestamp = std::chrono::steady_clock().now();
@@ -84,7 +38,7 @@ int main(int argc, char** argv) {
 
     ImageViewerMap image_viewer_map{};
     {
-        std::vector<std::filesystem::path> image_paths{};
+        ImagePaths image_paths{};
         for (int i = 1; i < argc; ++i) {
             image_paths.emplace_back(argv[i]);
         }
@@ -144,7 +98,7 @@ int main(int argc, char** argv) {
                 }
                 break;
             case SDL_DROPFILE:
-                openImages(image_viewer_map, std::vector<std::filesystem::path>{std::filesystem::path{event.drop.file}});
+                openImages(image_viewer_map, ImagePaths{{event.drop.file}});
                 break;
             default:
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
@@ -161,3 +115,54 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+
+int eventMonitor(void* repaint_callback, SDL_Event* event) noexcept {
+    // Refresh while resizing window
+    if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+        if (repaint_callback != nullptr) {
+            ImageViewerMap* image_viewer_map = static_cast<ImageViewerMap*>(repaint_callback);
+            auto it = image_viewer_map->find(event->window.windowID);
+            if (it != image_viewer_map->end()) {
+                it->second->repaint();
+            }
+        }
+    }
+    return 1;
+}
+
+void openImages(ImageViewerMap& image_viewer_map, ImagePaths const& image_paths) noexcept {
+    for (auto const& image_path  : image_paths) {
+        auto image_viewer = ImageViewer::open(image_path);
+        if (image_viewer) {
+            image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
+        } else {
+            std::cerr << "Failed to open '" << image_path << "': " << SDL_GetError() << '\n';
+        }
+    }
+}
+
+bool preamble() noexcept {
+    if (not pfd::settings::available())
+    {
+        SDL_SetError("this platform has no portable-file-dialogs backend.");
+        return false;
+    }
+
+    SDLit::init(SDL_INIT_VIDEO, IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_WEBP);
+
+    std::vector<std::pair<std::string, std::string>> const hints{
+        {SDL_HINT_IME_SHOW_UI, "1"},
+        {SDL_HINT_RENDER_SCALE_QUALITY, "best"},
+        {SDL_HINT_RENDER_VSYNC, "1"},
+        {SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1"}
+    };
+
+    for (auto const& hint : hints) {
+        if (not SDL_SetHint(hint.first.c_str(), hint.second.c_str())) {
+            SDL_SetError("failed to set hint %s=%s: %s", hint.first.c_str(), hint.second.c_str(), std::string{SDL_GetError()}.c_str());
+            return false;
+        }
+    }
+
+    return true;
+}
