@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 static bool preamble() noexcept;
-static int eventMonitor(void* repaint_callback, SDL_Event* event) noexcept;
+static int eventMonitor(void* context, SDL_Event* event) noexcept;
 
 using ImageViewerMap = std::unordered_map<std::uint32_t, std::unique_ptr<ImageViewer>>;
 using ImagePaths = std::vector<std::filesystem::path>;
@@ -144,11 +144,11 @@ int main(int argc, char** argv) {
 }
 
 
-int eventMonitor(void* repaint_callback, SDL_Event* event) noexcept {
+int eventMonitor(void* context, SDL_Event* event) noexcept {
     // Refresh while resizing window
     if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-        if (repaint_callback != nullptr) {
-            ImageViewerMap* image_viewer_map = static_cast<ImageViewerMap*>(repaint_callback);
+        if (context != nullptr) {
+            ImageViewerMap* image_viewer_map = static_cast<ImageViewerMap*>(context);
             auto it = image_viewer_map->find(event->window.windowID);
             if (it != image_viewer_map->end()) {
                 it->second->repaint();
