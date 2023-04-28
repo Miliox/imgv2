@@ -138,14 +138,12 @@ int main(int argc, char** argv) {
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN:
-                case SDL_BUTTON_RIGHT:
-                    if (event.button.clicks == 2U) {
-                        auto it = image_viewer_map.find(event.button.windowID);
-                        if (it != image_viewer_map.end()) {
-                            it->second->maximize();
-                        }
+                if (event.button.button == SDL_BUTTON_LEFT && event.button.clicks == 2U) {
+                    auto it = image_viewer_map.find(event.button.windowID);
+                    if (it != image_viewer_map.end()) {
+                        it->second->maximize();
                     }
-                    break;
+                }
                 break;
             case SDL_DROPFILE:
                 openImages(image_viewer_map, std::vector<std::filesystem::path>{std::filesystem::path{event.drop.file}});
