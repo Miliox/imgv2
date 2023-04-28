@@ -123,14 +123,36 @@ int main(int argc, char** argv) {
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
                     openImages(image_viewer_map, pickImageDialog());
                 } else if (event.type == menu_user_event_id && event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION) {
-                    auto it = image_viewer_map.find(event.user.windowID);
-                    if (it != image_viewer_map.end()) {
-                        it->second->flipHorizontal();
+                    if (event.user.windowID != 0) {
+                        auto it = image_viewer_map.find(event.user.windowID);
+                        if (it != image_viewer_map.end()) {
+                            it->second->flipHorizontal();
+                        }
+                    } else {
+#if __MACH__
+                        for (auto& it : image_viewer_map) {
+                            if (it.second->windowInfo()->info.cocoa.window == event.user.data1) {
+                                it.second->flipHorizontal();
+                                break;
+                            }
+                        }
                     }
+#endif
                 } else if (event.type == menu_user_event_id && event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION) {
-                    auto it = image_viewer_map.find(event.user.windowID);
-                    if (it != image_viewer_map.end()) {
-                        it->second->flipVertical();
+                    if (event.user.windowID != 0) {
+                        auto it = image_viewer_map.find(event.user.windowID);
+                        if (it != image_viewer_map.end()) {
+                            it->second->flipVertical();
+                        }
+                    } else {
+#if __MACH__
+                        for (auto& it : image_viewer_map) {
+                            if (it.second->windowInfo()->info.cocoa.window == event.user.data1) {
+                                it.second->flipVertical();
+                                break;
+                            }
+                        }
+#endif
                     }
                 }
                 break;

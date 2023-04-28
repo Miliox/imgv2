@@ -19,7 +19,11 @@ static int32_t g_menu_user_event_id;
     SDL_memset(&event, 0, sizeof(event));
     event.type = g_menu_user_event_id;
     event.user.code = MENU_OPEN_FILE_ACTION;
-    event.user.windowID = SDL_GetWindowID(SDL_GetMouseFocus());
+    // Window may be nullptr if mouse not on focusing any of the window
+    SDL_Window* window = SDL_GetMouseFocus();
+    event.user.windowID = window ? SDL_GetWindowID(window) : 0U;
+    // Fallback is to lookup at the current main window
+    event.user.data1 = [[NSApplication sharedApplication] mainWindow];
     SDL_PushEvent(&event);
 }
 - (void)requestFlipHorizontal {
@@ -27,7 +31,9 @@ static int32_t g_menu_user_event_id;
     SDL_memset(&event, 0, sizeof(event));
     event.type = g_menu_user_event_id;
     event.user.code = MENU_EDIT_FLIP_HORIZONTAL_ACTION;
-    event.user.windowID = SDL_GetWindowID(SDL_GetMouseFocus());
+    SDL_Window* window = SDL_GetMouseFocus();
+    event.user.windowID = window ? SDL_GetWindowID(window) : 0U;
+    event.user.data1 = [[NSApplication sharedApplication] mainWindow];
     SDL_PushEvent(&event);
 }
 - (void)requestFlipVertical {
@@ -35,7 +41,9 @@ static int32_t g_menu_user_event_id;
     SDL_memset(&event, 0, sizeof(event));
     event.type = g_menu_user_event_id;
     event.user.code = MENU_EDIT_FLIP_VERTICAL_ACTION;
-    event.user.windowID = SDL_GetWindowID(SDL_GetMouseFocus());
+    SDL_Window* window = SDL_GetMouseFocus();
+    event.user.windowID = window ? SDL_GetWindowID(window) : 0U;
+    event.user.data1 = [[NSApplication sharedApplication] mainWindow];
     SDL_PushEvent(&event);
 }
 @end

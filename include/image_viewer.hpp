@@ -28,6 +28,7 @@ public:
     SDL_Window* window() const noexcept;
     SDL_Renderer* renderer() const noexcept;
     SDL_Texture* texture() const noexcept;
+    SDL_SysWMinfo* windowInfo() noexcept;
 
     bool center() noexcept;
     bool customizeTitlebar() noexcept;
