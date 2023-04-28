@@ -105,14 +105,6 @@ int main(int argc, char** argv) {
                 }
                 break;
             }
-            case SDL_MOUSEMOTION:
-            {
-                auto it = image_viewer_map.find(event.motion.windowID);
-                if (it != image_viewer_map.end()) {
-                    it->second->processMouseMotionEvent(event.motion);
-                }
-                break;
-            }
             case SDL_MOUSEWHEEL:
             {
                 auto it = image_viewer_map.find(event.wheel.windowID);
@@ -152,6 +144,14 @@ int eventMonitor(void* context, SDL_Event* event) noexcept {
             auto it = image_viewer_map->find(event->window.windowID);
             if (it != image_viewer_map->end()) {
                 it->second->repaint();
+            }
+        }
+    } else if (event->type == SDL_MOUSEMOTION) {
+        if (context != nullptr) {
+            ImageViewerMap* image_viewer_map = static_cast<ImageViewerMap*>(context);
+            auto it = image_viewer_map->find(event->motion.windowID);
+            if (it != image_viewer_map->end()) {
+                it->second->processMouseMotionEvent(event->motion);
             }
         }
     }
