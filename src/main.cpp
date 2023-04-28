@@ -115,14 +115,12 @@ int main(int argc, char** argv) {
                     if (it != image_viewer_map.end()) {
                         it->second->repaint();
                     }
-                }
-                if (event.window.event == SDL_WINDOWEVENT_MOVED) {
+                } else if (event.window.event == SDL_WINDOWEVENT_MOVED) {
                     auto it = image_viewer_map.find(event.window.windowID);
                     if (it != image_viewer_map.end()) {
                         it->second->customizeTitlebar();
                     }
-                }
-                if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                } else if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
                     auto it = image_viewer_map.find(event.window.windowID);
                     if (it != image_viewer_map.end()) {
                         image_viewer_map.erase(it);
