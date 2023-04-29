@@ -2,6 +2,7 @@
 #include "image_viewer.hpp"
 #include "native_window.h"
 
+#include <algorithm>
 #include <chrono>
 #include <unordered_map>
 
@@ -122,37 +123,24 @@ int main(int argc, char** argv) {
             {
                 if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
                     openImages(image_viewer_map, pickImageDialog());
-                } else if (event.type == menu_user_event_id && event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION) {
-                    if (event.user.windowID != 0) {
-                        auto it = image_viewer_map.find(event.user.windowID);
-                        if (it != image_viewer_map.end()) {
-                            it->second->flipHorizontal();
-                        }
-                    } else {
-#if __MACH__
-                        for (auto& it : image_viewer_map) {
-                            if (it.second->windowInfo()->info.cocoa.window == event.user.data1) {
-                                it.second->flipHorizontal();
-                                break;
-                            }
-                        }
-                    }
-#endif
-                } else if (event.type == menu_user_event_id && event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION) {
-                    if (event.user.windowID != 0) {
-                        auto it = image_viewer_map.find(event.user.windowID);
-                        if (it != image_viewer_map.end()) {
-                            it->second->flipVertical();
-                        }
-                    } else {
-#if __MACH__
-                        for (auto& it : image_viewer_map) {
-                            if (it.second->windowInfo()->info.cocoa.window == event.user.data1) {
-                                it.second->flipVertical();
-                                break;
-                            }
-                        }
-#endif
+                } else if (event.type == menu_user_event_id && (event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION ||
+                                                                event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION)) {
+                    // The windowID relies on SDL_GetWindowID(SDL_GetMouseFocus()) which will return 0 when there is
+                    // no windows in focus. For example, This happens on MacOS when user interact with the app menus.
+                    // As a fallback to locate the window, the current window handle is stored on data1.
+                    auto it = (event.user.windowID != 0)
+                              ? image_viewer_map.find(event.user.windowID)
+                              : std::find_if(image_viewer_map.begin(), image_viewer_map.end(),
+                                [&event](auto& it) -> bool {
+                                    return event.user.data1 == NativeWindow_getHandle(it.second->windowManagerInfo());
+                                }) ;
+
+                    if (it == image_viewer_map.end()) {
+                        break;
+                    } else if (event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION) {
+                        it->second->flipHorizontal();
+                    } else if (event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION) {
+                        it->second->flipVertical();
                     }
                 }
                 break;

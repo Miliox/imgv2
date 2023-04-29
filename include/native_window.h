@@ -29,9 +29,13 @@ void NativeWindow_customizeApplicationMenu(uint32_t const menu_user_event_id);
 /// @note: call only once
 void NativeWindow_customizeWindowMenu(struct SDL_SysWMinfo* window_info, uint32_t const menu_user_event_id);
 
+/// Handle for this window
+void* NativeWindow_getHandle(struct SDL_SysWMinfo* window_info);
+
 /// Maximize window
 /// @note call it again to undo the operation
 void NativeWindow_maximize(struct SDL_SysWMinfo* window_info);
+
 
 #define MENU_OPEN_FILE_ACTION 1
 #define MENU_EDIT_FLIP_HORIZONTAL_ACTION 2

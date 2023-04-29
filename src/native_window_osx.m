@@ -19,10 +19,8 @@ static int32_t g_menu_user_event_id;
     SDL_memset(&event, 0, sizeof(event));
     event.type = g_menu_user_event_id;
     event.user.code = MENU_OPEN_FILE_ACTION;
-    // Window may be nullptr if mouse not on focusing any of the window
     SDL_Window* window = SDL_GetMouseFocus();
     event.user.windowID = window ? SDL_GetWindowID(window) : 0U;
-    // Fallback is to lookup at the current main window
     event.user.data1 = [[NSApplication sharedApplication] mainWindow];
     SDL_PushEvent(&event);
 }
@@ -51,6 +49,10 @@ static int32_t g_menu_user_event_id;
 void NativeWindow_maximize(SDL_SysWMinfo* window_info) {
     NSWindow* native_window = window_info->info.cocoa.window;
     [native_window performZoom:nil];
+}
+
+void* NativeWindow_getHandle(struct SDL_SysWMinfo* window_info) {
+    return window_info->info.cocoa.window;
 }
 
 void NativeWindow_customizeTitleBar(SDL_SysWMinfo* window_info) {
