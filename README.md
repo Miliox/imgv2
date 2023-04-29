@@ -5,7 +5,9 @@ Simple Image Viewer Enhanced Edition
 ## Features
 
 * Minimalist (No title bar)
-* Window Menu option: "File > Open File"
+* Window Menu options
+  * File > Open File
+  * Edit > Flip Horizontal/Vertical
 * Double click to fill desktop
 * Responsive window resizing
 * Support multiple images open simultaneously
@@ -18,16 +20,32 @@ Simple Image Viewer Enhanced Edition
 * Objective-C (macOS)
 * SDL2
 
+### MacOS
+
+```bash
+# install required c++/objc compilers
+xcode-select --install
+
+# install required tools and libraries
+brew install meson ninja sdl2 sdl2_image sdl2_mixer sdl2_ttf
+```
+
 ## Build
 
 ```bash
-meson setup --wipe builddir
-meson compile   -C builddir
+mkdir builddir
+
+meson setup builddir
+
+meson compile -C builddir
 ```
 
 ## Run
 
 ```bash
+# Command line help
+imgv2 --help
+
 # Launch with dialog to open images
 imgv2
 
