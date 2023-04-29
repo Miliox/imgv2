@@ -36,7 +36,6 @@ void* NativeWindow_getHandle(struct SDL_SysWMinfo* window_info);
 /// @note call it again to undo the operation
 void NativeWindow_maximize(struct SDL_SysWMinfo* window_info);
 
-
 #define MENU_OPEN_FILE_ACTION 1
 #define MENU_EDIT_FLIP_HORIZONTAL_ACTION 2
 #define MENU_EDIT_FLIP_VERTICAL_ACTION 3

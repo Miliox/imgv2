@@ -1,10 +1,11 @@
 #include "main.hpp"
-#include "image_viewer.hpp"
-#include "native_window.h"
 
 #include <algorithm>
 #include <chrono>
 #include <unordered_map>
+
+#include "image_viewer.hpp"
+#include "native_window.h"
 
 static bool preamble() noexcept;
 static int eventMonitor(void* context, SDL_Event* event) noexcept;
@@ -19,7 +20,8 @@ int main(int argc, char** argv) {
         auto arg_view = std::string_view{argv[i]};
         if (arg_view.starts_with("-")) {
             std::cerr << "ImageViewer V2\n\n";
-            std::cerr << "imgv2 is a simple and minimalist cross platform image viewer.\n\n";
+            std::cerr << "imgv2 is a simple and minimalist cross platform "
+                         "image viewer.\n\n";
             std::cerr << "USAGE: \n";
             std::cerr << "    " << argv[0] << " [IMAGE ...]\n";
             std::cerr << "    " << argv[0] << " -h\n";
@@ -51,100 +53,98 @@ int main(int argc, char** argv) {
         RET_FAIL_IF_EMPTY(image_viewer_map);
     }
     auto const initialization_completed_timestamp = std::chrono::steady_clock().now();
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "initialization took %lf seconds", std::chrono::duration_cast<std::chrono::duration<double>>(initialization_completed_timestamp - initialization_startup_timestamp).count());
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "initialization took %lf seconds",
+                std::chrono::duration_cast<std::chrono::duration<double>>(initialization_completed_timestamp -
+                                                                          initialization_startup_timestamp)
+                    .count());
 
-    // Repaint inside the eventMonitor because SDL_PollEvent only emits SDL_WINDOWEVENT_SIZE_CHANGED
-    // at the end of resizing operation. This allows the image to be responsive during the resizing.
+    // Repaint inside the eventMonitor because SDL_PollEvent only emits SDL_WINDOWEVENT_SIZE_CHANGED at the end of
+    // resizing operation. This allows the image to be responsive during the resizing.
     SDL_AddEventWatch(eventMonitor, &image_viewer_map);
 
     SDL_Event event{};
     while (not image_viewer_map.empty()) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
-            case SDL_QUIT:
-            {
-                image_viewer_map.clear();
-                break;
-            }
-            case SDL_WINDOWEVENT:
-            {
-                if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
-                    auto it = image_viewer_map.find(event.window.windowID);
-                    if (it != image_viewer_map.end()) {
-                        it->second->repaint();
-                    }
-                } else if (event.window.event == SDL_WINDOWEVENT_MOVED) {
-                    auto it = image_viewer_map.find(event.window.windowID);
-                    if (it != image_viewer_map.end()) {
-                        it->second->customizeTitlebar();
-                    }
-                } else if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
-                    auto it = image_viewer_map.find(event.window.windowID);
-                    if (it != image_viewer_map.end()) {
-                        image_viewer_map.erase(it);
-                    }
+                case SDL_QUIT: {
+                    image_viewer_map.clear();
+                    break;
                 }
-                break;
-            }
-            case SDL_KEYDOWN:
-            {
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
-                    auto it = image_viewer_map.find(event.key.windowID);
-                    if (it != image_viewer_map.end()) {
-                        image_viewer_map.erase(it);
+                case SDL_WINDOWEVENT: {
+                    if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
+                        auto it = image_viewer_map.find(event.window.windowID);
+                        if (it != image_viewer_map.end()) {
+                            it->second->repaint();
+                        }
+                    } else if (event.window.event == SDL_WINDOWEVENT_MOVED) {
+                        auto it = image_viewer_map.find(event.window.windowID);
+                        if (it != image_viewer_map.end()) {
+                            it->second->customizeTitlebar();
+                        }
+                    } else if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                        auto it = image_viewer_map.find(event.window.windowID);
+                        if (it != image_viewer_map.end()) {
+                            image_viewer_map.erase(it);
+                        }
                     }
                     break;
                 }
-                break;
-            }
-            case SDL_MOUSEBUTTONDOWN:
-            case SDL_MOUSEBUTTONUP:
-            {
-                auto it = image_viewer_map.find(event.button.windowID);
-                if (it != image_viewer_map.end()) {
-                    it->second->processMouseButtonEvent(event.button);
-                }
-                break;
-            }
-            case SDL_MOUSEWHEEL:
-            {
-                auto it = image_viewer_map.find(event.wheel.windowID);
-                if (it != image_viewer_map.end()) {
-                    it->second->processMouseWheelEvent(event.wheel);
-                }
-                break;
-            }
-            case SDL_DROPFILE:
-            {
-                openImages(image_viewer_map, ImagePaths{{event.drop.file}});
-                break;
-            }
-            default:
-            {
-                if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
-                    openImages(image_viewer_map, pickImageDialog());
-                } else if (event.type == menu_user_event_id && (event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION ||
-                                                                event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION)) {
-                    // The windowID relies on SDL_GetWindowID(SDL_GetMouseFocus()) which will return 0 when there is
-                    // no windows in focus. For example, This happens on MacOS when user interact with the app menus.
-                    // As a fallback to locate the window, the current window handle is stored on data1.
-                    auto it = (event.user.windowID != 0)
-                              ? image_viewer_map.find(event.user.windowID)
-                              : std::find_if(image_viewer_map.begin(), image_viewer_map.end(),
-                                [&event](auto& it) -> bool {
-                                    return event.user.data1 == NativeWindow_getHandle(it.second->windowManagerInfo());
-                                }) ;
-
-                    if (it == image_viewer_map.end()) {
+                case SDL_KEYDOWN: {
+                    if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        auto it = image_viewer_map.find(event.key.windowID);
+                        if (it != image_viewer_map.end()) {
+                            image_viewer_map.erase(it);
+                        }
                         break;
-                    } else if (event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION) {
-                        it->second->flipHorizontal();
-                    } else if (event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION) {
-                        it->second->flipVertical();
                     }
+                    break;
                 }
-                break;
-            }
+                case SDL_MOUSEBUTTONDOWN:
+                case SDL_MOUSEBUTTONUP: {
+                    auto it = image_viewer_map.find(event.button.windowID);
+                    if (it != image_viewer_map.end()) {
+                        it->second->processMouseButtonEvent(event.button);
+                    }
+                    break;
+                }
+                case SDL_MOUSEWHEEL: {
+                    auto it = image_viewer_map.find(event.wheel.windowID);
+                    if (it != image_viewer_map.end()) {
+                        it->second->processMouseWheelEvent(event.wheel);
+                    }
+                    break;
+                }
+                case SDL_DROPFILE: {
+                    openImages(image_viewer_map, ImagePaths{{event.drop.file}});
+                    break;
+                }
+                default: {
+                    if (event.type == menu_user_event_id && event.user.code == MENU_OPEN_FILE_ACTION) {
+                        openImages(image_viewer_map, pickImageDialog());
+                    } else if (event.type == menu_user_event_id &&
+                               (event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION ||
+                                event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION)) {
+                        // The windowID relies on SDL_GetWindowID(SDL_GetMouseFocus()) which will return 0 when there is
+                        // no windows in focus. For example, This happens on MacOS when user interact with the app
+                        // menus. As a fallback to locate the window, the current window handle is stored on data1.
+                        auto it = (event.user.windowID != 0)
+                                      ? image_viewer_map.find(event.user.windowID)
+                                      : std::find_if(image_viewer_map.begin(), image_viewer_map.end(),
+                                                     [&event](auto& it) -> bool {
+                                                         return event.user.data1 ==
+                                                                NativeWindow_getHandle(it.second->windowManagerInfo());
+                                                     });
+
+                        if (it == image_viewer_map.end()) {
+                            break;
+                        } else if (event.user.code == MENU_EDIT_FLIP_HORIZONTAL_ACTION) {
+                            it->second->flipHorizontal();
+                        } else if (event.user.code == MENU_EDIT_FLIP_VERTICAL_ACTION) {
+                            it->second->flipVertical();
+                        }
+                    }
+                    break;
+                }
             }
         }
         SDL_Delay(1'000U / 60U);
@@ -178,7 +178,7 @@ int eventMonitor(void* context, SDL_Event* event) noexcept {
 }
 
 void openImages(ImageViewerMap& image_viewer_map, ImagePaths const& image_paths) noexcept {
-    for (auto const& image_path  : image_paths) {
+    for (auto const& image_path : image_paths) {
         auto image_viewer = ImageViewer::open(image_path);
         if (image_viewer) {
             image_viewer_map[SDL_GetWindowID(image_viewer->window())] = std::move(image_viewer);
@@ -189,24 +189,22 @@ void openImages(ImageViewerMap& image_viewer_map, ImagePaths const& image_paths)
 }
 
 bool preamble() noexcept {
-    if (not pfd::settings::available())
-    {
+    if (not pfd::settings::available()) {
         SDL_SetError("this platform has no portable-file-dialogs backend.");
         return false;
     }
 
-    SDLit::init(SDL_INIT_VIDEO, IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_WEBP);
+    SDLit::init(SDL_INIT_VIDEO, IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_WEBP);
 
-    std::vector<std::pair<std::string, std::string>> const hints{
-        {SDL_HINT_IME_SHOW_UI, "1"},
-        {SDL_HINT_RENDER_SCALE_QUALITY, "best"},
-        {SDL_HINT_RENDER_VSYNC, "1"},
-        {SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1"}
-    };
+    std::vector<std::pair<std::string, std::string>> const hints{{SDL_HINT_IME_SHOW_UI, "1"},
+                                                                 {SDL_HINT_RENDER_SCALE_QUALITY, "best"},
+                                                                 {SDL_HINT_RENDER_VSYNC, "1"},
+                                                                 {SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1"}};
 
     for (auto const& hint : hints) {
         if (not SDL_SetHint(hint.first.c_str(), hint.second.c_str())) {
-            SDL_SetError("failed to set hint %s=%s: %s", hint.first.c_str(), hint.second.c_str(), std::string{SDL_GetError()}.c_str());
+            SDL_SetError("failed to set hint %s=%s: %s", hint.first.c_str(), hint.second.c_str(),
+                         std::string{SDL_GetError()}.c_str());
             return false;
         }
     }

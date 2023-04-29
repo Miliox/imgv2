@@ -4,32 +4,53 @@
 #include <utility>
 
 #include "native_window.h"
-
 #include "portable-file-dialogs.h"
 
 std::vector<std::filesystem::path> pickImageDialog() {
-    auto const user_selection = pfd::open_file{"Select an image to view", pfd::path::home(),
-        {"All files", "*",
-         "All images", "*.avif *.bmp *.gif *.iff *.ilbm *.lbm *.jpg, *.jpeg, *.jpe, *.jif, *.jfif *.jxl *.xv *.cur *.ico *.pcx *.pcc, *.dcx *.pnm *.png *.svg *.tif *.tiff *.qoi *.tga *.xpm, *.pm *.xcf *.webp",
-         "AV1 Image Format", "*.avif",
-         "Bitmap Format", "*.bmp",
-         "Graphics Interchange Format", "*.gif",
-         "InterLeaved BitMap Format", "*.iff *.ilbm *.lbm",
-         "Joint Photographic Experts Group Image Format", "*.jpg, *.jpeg, *.jpe, *.jif, *.jfif *.jxl",
-         "Khoros Visualization Image File Format (VIFF)", "*.xv",
-         "Microsoft Icon Format", "*.cur *.ico",
-         "Paintbrush Format", "*.pcx *.pcc, *.dcx",
-         "Portable Anymap File Format", "*.pnm",
-         "Portable Network Graphics", "*.png",
-         "Scalable Vector Graphics ", "*.svg",
-         "Tagged Image File Format", "*.tif *.tiff",
-         "The Quite OK Image Format", "*.qoi",
-         "Truevision Graphics Adapter File Format", "*.tga",
-         "X-Pixmap Format", "*.xpm, *.pm",
-         "eXperimental Computing Facility Format", "*.xcf",
-         "WebP image format", "*.webp"},
-         pfd::opt::multiselect
-    }.result();
+    auto const user_selection =
+        pfd::open_file{"Select an image to view",
+                       pfd::path::home(),
+                       {"All files",
+                        "*",
+                        "All images",
+                        "*.avif *.bmp *.gif *.iff *.ilbm *.lbm *.jpg, *.jpeg, *.jpe, *.jif, *.jfif *.jxl *.xv *.cur "
+                        "*.ico *.pcx *.pcc, *.dcx *.pnm *.png *.svg *.tif *.tiff *.qoi *.tga *.xpm, *.pm *.xcf *.webp",
+                        "AV1 Image Format",
+                        "*.avif",
+                        "Bitmap Format",
+                        "*.bmp",
+                        "Graphics Interchange Format",
+                        "*.gif",
+                        "InterLeaved BitMap Format",
+                        "*.iff *.ilbm *.lbm",
+                        "Joint Photographic Experts Group Image Format",
+                        "*.jpg, *.jpeg, *.jpe, *.jif, *.jfif *.jxl",
+                        "Khoros Visualization Image File Format (VIFF)",
+                        "*.xv",
+                        "Microsoft Icon Format",
+                        "*.cur *.ico",
+                        "Paintbrush Format",
+                        "*.pcx *.pcc, *.dcx",
+                        "Portable Anymap File Format",
+                        "*.pnm",
+                        "Portable Network Graphics",
+                        "*.png",
+                        "Scalable Vector Graphics ",
+                        "*.svg",
+                        "Tagged Image File Format",
+                        "*.tif *.tiff",
+                        "The Quite OK Image Format",
+                        "*.qoi",
+                        "Truevision Graphics Adapter File Format",
+                        "*.tga",
+                        "X-Pixmap Format",
+                        "*.xpm, *.pm",
+                        "eXperimental Computing Facility Format",
+                        "*.xcf",
+                        "WebP image format",
+                        "*.webp"},
+                       pfd::opt::multiselect}
+            .result();
 
     std::vector<std::filesystem::path> file_paths{};
     for (auto const& file_path : user_selection) {
@@ -42,7 +63,7 @@ std::vector<std::filesystem::path> pickImageDialog() {
 SDL_FRect resizeToFit(SDL_Rect const& src, SDL_Rect const& dst) {
     float const src_ratio = static_cast<float>(src.w) / static_cast<float>(src.h);
 
-    float const adjusted_width  = static_cast<float>(dst.h) * src_ratio;
+    float const adjusted_width = static_cast<float>(dst.h) * src_ratio;
     float const adjusted_height = static_cast<float>(dst.w) / src_ratio;
 
     SDL_FRect inner_rect{};
@@ -68,17 +89,11 @@ std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image
         return {nullptr};
     }
 
-    auto image_window = SDLit::make_unique(
-        SDL_CreateWindow,
-        image_path.filename().c_str(),
-        SDL_WINDOWPOS_UNDEFINED,
-        SDL_WINDOWPOS_UNDEFINED,
-        image_surface->w,
-        image_surface->h,
-        SDL_WINDOW_RESIZABLE |
-        SDL_WINDOW_ALLOW_HIGHDPI);
+    auto image_window = SDLit::make_unique(SDL_CreateWindow, image_path.filename().c_str(), SDL_WINDOWPOS_UNDEFINED,
+                                           SDL_WINDOWPOS_UNDEFINED, image_surface->w, image_surface->h,
+                                           SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
-#if 0 // Prevents double click
+#if 0  // Prevents double click
     SDL_SetWindowHitTest(image_window.get(),
         [](SDL_Window*, SDL_Point const*, void*) -> SDL_HitTestResult {
             return SDL_HITTEST_DRAGGABLE;
@@ -92,30 +107,20 @@ std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image
 
     NativeWindow_customizeTitleBar(&image_window_manager_info);
 
-    auto image_renderer = SDLit::make_unique(
-        SDL_CreateRenderer,
-        image_window.get(),
-        -1,
-        SDL_RENDERER_ACCELERATED |
-        SDL_RENDERER_PRESENTVSYNC);
+    auto image_renderer = SDLit::make_unique(SDL_CreateRenderer, image_window.get(), -1,
+                                             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (not image_renderer) {
         return {nullptr};
     }
 
-    auto image_texture = SDLit::make_unique(
-        SDL_CreateTextureFromSurface,
-        image_renderer.get(),
-        image_surface.get());
+    auto image_texture = SDLit::make_unique(SDL_CreateTextureFromSurface, image_renderer.get(), image_surface.get());
     if (not image_texture) {
         return {nullptr};
     }
 
-    auto image_viewer = std::unique_ptr<ImageViewer>{new ImageViewer{
-        std::move(image_path),
-        std::move(image_window_manager_info),
-        std::move(image_window),
-        std::move(image_renderer),
-        std::move(image_texture)}};
+    auto image_viewer = std::unique_ptr<ImageViewer>{
+        new ImageViewer{std::move(image_path), std::move(image_window_manager_info), std::move(image_window),
+                        std::move(image_renderer), std::move(image_texture)}};
 
     image_viewer->resize();
     image_viewer->center();
@@ -129,17 +134,15 @@ std::unique_ptr<ImageViewer> ImageViewer::open(std::filesystem::path const image
     return image_viewer;
 }
 
-ImageViewer::ImageViewer(
-    std::filesystem::path image_path,
-    SDL_SysWMinfo window_info,
-    std::unique_ptr<SDL_Window, SDLit::SDL_Deleter> window,
-    std::unique_ptr<SDL_Renderer, SDLit::SDL_Deleter> renderer,
-    std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter> texture) noexcept
-    : m_image_path{std::move(image_path)}
-    ,  m_window_info{std::move(window_info)}
-    ,  m_window{std::move(window)}
-    ,  m_renderer{std::move(renderer)}
-    ,  m_texture{std::move(texture)} {}
+ImageViewer::ImageViewer(std::filesystem::path image_path, SDL_SysWMinfo window_info,
+                         std::unique_ptr<SDL_Window, SDLit::SDL_Deleter> window,
+                         std::unique_ptr<SDL_Renderer, SDLit::SDL_Deleter> renderer,
+                         std::unique_ptr<SDL_Texture, SDLit::SDL_Deleter> texture) noexcept
+    : m_image_path{std::move(image_path)},
+      m_window_info{std::move(window_info)},
+      m_window{std::move(window)},
+      m_renderer{std::move(renderer)},
+      m_texture{std::move(texture)} {}
 
 ImageViewer::~ImageViewer() noexcept {}
 
@@ -193,8 +196,8 @@ bool ImageViewer::resize() noexcept {
     // portions reserved by the system because platform limitations on macOS when windows are off-screen.
     //
     // See: Cocoa_GetWindowDisplayIndex (NSWindow.screen may be nil when the window is off-screen.)
-    if  (SDL_GetError() == std::string_view{"Couldn't find the display where the window is located."}) {
-        desktop_rect.y = 25; // Is this always the same value?
+    if (SDL_GetError() == std::string_view{"Couldn't find the display where the window is located."}) {
+        desktop_rect.y = 25;  // Is this always the same value?
         desktop_rect.h -= desktop_rect.y;
     }
 #endif
@@ -233,14 +236,7 @@ bool ImageViewer::repaint() noexcept {
         return false;
     }
 
-    if (SDL_RenderCopyExF(
-            m_renderer.get(),
-            m_texture.get(),
-            nullptr,
-            &viewport_frect,
-            0,
-            nullptr,
-            m_flip)) {
+    if (SDL_RenderCopyExF(m_renderer.get(), m_texture.get(), nullptr, &viewport_frect, 0, nullptr, m_flip)) {
         return false;
     }
 
@@ -272,10 +268,6 @@ void ImageViewer::processMouseButtonEvent(SDL_MouseButtonEvent const& event) {
     }
 }
 
-void ImageViewer::processMouseMotionEvent(SDL_MouseMotionEvent const& event) {
+void ImageViewer::processMouseMotionEvent(SDL_MouseMotionEvent const& event) {}
 
-}
-
-void ImageViewer::processMouseWheelEvent(SDL_MouseWheelEvent const& event) {
-
-}
+void ImageViewer::processMouseWheelEvent(SDL_MouseWheelEvent const& event) {}
